@@ -1,16 +1,16 @@
 library(Seurat)
 library(readr)
 
-#---------------->* = Adjust according integration method<----------------
-scrna = read_rds("YourDirectory/scrna_object_*.rds")
+#---------------->Adjust according integration method<----------------
+scrna = read_rds("/hpc/pmc_kool/fvalzano/Rstudio_Test1/TME/TME_files_March24/scrna_harmony.rds")
 Idents(scrna) = "Entity"
 scrna_subset = list()
 for (i in unique(scrna$Entity)) {
     scrna_subset[[i]] = subset(scrna, idents = i)
-    write_rds(scrna_subset[[i]], file = paste0("YourDirectory/scrna_object_*_,i,".rds"))
+    write_rds(scrna_subset[[i]], file = paste0("/hpc/pmc_kool/fvalzano/Rstudio_Test1/TME/TME_files_March24/Seurat_subsets/Post_Entity_Splitting/scrna_harmony_",i,".rds"))
 }
-
-scrna_mb = read_rds("YourDirectory/scrna_object_*_mb.rds")
+#Mb
+scrna_mb = read_rds("/hpc/pmc_kool/fvalzano/Rstudio_Test1/TME/TME_files_March24/Seurat_subsets/Post_Entity_Splitting/scrna_harmony_Medulloblastoma.rds")
 scrna_mb_list = SplitObject(scrna_mb, split.by = "Dataset")
 hvg_mb = SelectIntegrationFeatures(scrna_mb_list, nfeatures = 3000)
 rm(scrna_mb_list)
@@ -19,10 +19,10 @@ scrna_mb = RunUMAP(scrna_mb, reduction = "harmony", dims = 1:30, reduction.name 
 scrna_mb = FindNeighbors(object = scrna_mb, reduction = "harmony", dims = 1:30)
 i = seq(0.2, 1, by = 0.2)
 scrna_mb = FindClusters(scrna_mb, resolution = i)
-write_rds(scrna_mb, "YourDirectory/scrna_object_*_mb.rds")
+write_rds(scrna_mb, "/hpc/pmc_kool/fvalzano/Rstudio_Test1/TME/TME_files_March24/Seurat_subsets/Post_Entity_Splitting/scrna_harmony_Medulloblastoma.rds")
 rm(scrna_mb)
 #Ep
-scrna_ep = read_rds("YourDirectory/scrna_object_*_ep.rds")
+scrna_ep = read_rds("/hpc/pmc_kool/fvalzano/Rstudio_Test1/TME/TME_files_March24/Seurat_subsets/Post_Entity_Splitting/scrna_harmony_Ependymoma.rds")
 scrna_ep_list = SplitObject(scrna_ep, split.by = "Dataset")
 hvg_ep = SelectIntegrationFeatures(scrna_ep_list, nfeatures = 3000)
 rm(scrna_ep_list)
@@ -31,10 +31,10 @@ scrna_ep = RunUMAP(scrna_ep, reduction = "harmony", dims = 1:30, reduction.name 
 scrna_ep = FindNeighbors(object = scrna_ep, reduction = "harmony", dims = 1:30)
 i = seq(0.2, 1, by = 0.2)
 scrna_ep = FindClusters(scrna_ep, resolution = i)
-write_rds(scrna_ep,"YourDirectory/scrna_object_*_ep.rds")
+write_rds(scrna_ep,"/hpc/pmc_kool/fvalzano/Rstudio_Test1/TME/TME_files_March24/Seurat_subsets/Post_Entity_Splitting/scrna_harmony_Ependymoma.rds")
 rm(scrna_ep)
 #Nc
-scrna_nc = read_rds("YourDirectory/scrna_object_*_nc.rds")
+scrna_nc = read_rds("/hpc/pmc_kool/fvalzano/Rstudio_Test1/TME/TME_files_March24/Seurat_subsets/Post_Entity_Splitting/scrna_harmony_Non-cancerous.rds")
 scrna_nc_list = SplitObject(scrna_nc, split.by = "Dataset")
 hvg_nc = SelectIntegrationFeatures(scrna_nc_list, nfeatures = 3000)
 rm(scrna_nc_list)
@@ -43,5 +43,5 @@ scrna_nc = RunUMAP(scrna_nc, reduction = "harmony", dims = 1:30, reduction.name 
 scrna_nc = FindNeighbors(object = scrna_nc, reduction = "harmony", dims = 1:30)
 i = seq(0.2, 1, by = 0.2)
 scrna_nc = FindClusters(scrna_nc, resolution = i)
-write_rds(scrna_nc, "YourDirectory/scrna_object_*_nc.rds")
+write_rds(scrna_nc, "/hpc/pmc_kool/fvalzano/Rstudio_Test1/TME/TME_files_March24/Seurat_subsets/Post_Entity_Splitting/scrna_harmony_Non-cancerous.rds")
 rm(scrna_nc)
