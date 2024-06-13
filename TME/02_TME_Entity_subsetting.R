@@ -9,7 +9,7 @@ for (i in unique(scrna$Entity)) {
     scrna_subset[[i]] = subset(scrna, idents = i)
     write_rds(scrna_subset[[i]], file = paste0("YourDirectory/scrna_object_*_,i,".rds"))
 }
-#Mb
+
 scrna_mb = read_rds("YourDirectory/scrna_object_*_mb.rds")
 scrna_mb_list = SplitObject(scrna_mb, split.by = "Dataset")
 hvg_mb = SelectIntegrationFeatures(scrna_mb_list, nfeatures = 3000)
