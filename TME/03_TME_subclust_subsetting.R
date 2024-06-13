@@ -5,6 +5,7 @@ library(harmony)
 library(GeneNMF)
 library(UCell)
 
+
 #Subcluster full dataset in subclusters of interest
 scrna = read_rds("YourDirectory/scrna_object.rds")
 Idents(scrna) = "SCT_snn_res.0.4"
