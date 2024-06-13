@@ -25,4 +25,5 @@ scrna = RunUMAP(scrna, reduction = "pca", dims = 1:30, reduction.name = "umap")
 scrna = FindNeighbors(scrna, dims = 1:30)
 i = seq(0,1,by = 0.1)
 scrna= FindClusters(scrna, resolution = i, reduction = "umap")
-write_rds(scrna, "YourDirectory/scrna_object_rpca.rds")
+write_rds(scrna, "/hpc/pmc_kool/fvalzano/Rstudio_Test1/TME/TME_files_March24/scrna_rpca.rds")
+
