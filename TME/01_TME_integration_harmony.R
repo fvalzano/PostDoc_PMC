@@ -1,4 +1,4 @@
-ory/library(Seurat)
+library(Seurat)
 library(readr)
 library(harmony)
 
@@ -29,5 +29,6 @@ scrna_merge = FindNeighbors(object = scrna_merge, reduction = "harmony", dims = 
 scrna_merge = RunUMAP(scrna_merge, reduction = "harmony", dims = 1:30, reduction.name = "umap_harmony")
 i = seq(0.1, 1, by = 0.1)
 scrna_merge = FindClusters(scrna_merge, resolution = i)
-write_rds(scrna_merge, "YourDirectory/scrna_object_harmony.rds")
+write_rds(scrna_merge, "/hpc/pmc_kool/fvalzano/Rstudio_Test1/TME/TME_files_March24/scrna_harmony.rds")
+
 
