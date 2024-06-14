@@ -47,6 +47,48 @@ scrna_myeloid = RunUMAP(scrna_myeloid, reduction = "harmony", dims = 1:30, reduc
 scrna_myeloid = FindNeighbors(object = scrna_myeloid, reduction = "harmony", dims = 1:30)
 i = seq(0.1, 2, by = 0.1)
 scrna_myeloid = FindClusters(scrna_myeloid, resolution = i)
+Idents(scrna_myeloid) = "SCT_snn_res.1.2"
+scrna_myeloid = RenameIdents(scrna_myeloid, c("0" = "Activated TAM",
+                                              "1" = "Immunosuppressive TAM1",
+                                              "2" = "DC",
+                                              "3" = "Activated TAM",
+                                              "4" = "Proinflammatory Microglia1",
+                                              "5" = "Monocytes",
+                                              "6" = "Immunosuppressive TAM2",
+                                              "7" = "prolif. TAM",
+                                              "8" = "Immunosuppressive TAM3",
+                                              "9" = "Astrocytes1",
+                                              "10" = "Astrocytes2",
+                                              "11" = "Immunosuppressive TAM4",
+                                              "12" = "Astrocytes3",
+                                              "13" = "Proinflammatory Microglia2",
+                                              "14" = "Astrocytes4",
+                                              "15" = "MDSC",
+                                              "16" = "Damaged Cells",
+                                              "17" = "Astrocytes5",
+                                              "18" = "Astrocytes6"))
+scrna_myeloid$annotation_fv_v2 = scrna_myeloid@active.ident
+Idents(scrna_myeloid) = "SCT_snn_res.1.2"
+scrna_myeloid = RenameIdents(scrna_myeloid, c("0" = "Activated TAM",
+                                              "1" = "Immunosuppressive TAM",
+                                              "2" = "DC",
+                                              "3" = "Activated TAM",
+                                              "4" = "Proinflammatory Microglia",
+                                              "5" = "Monocytes",
+                                              "6" = "Immunosuppressive TAM",
+                                              "7" = "prolif. TAM",
+                                              "8" = "Immunosuppressive TAM",
+                                              "9" = "Astrocytes",
+                                              "10" = "Astrocytes",
+                                              "11" = "Immunosuppressive TAM",
+                                              "12" = "Astrocytes",
+                                              "13" = "Proinflammatory Microglia",
+                                              "14" = "Astrocytes",
+                                              "15" = "MDSC",
+                                              "16" = "Damaged Cells",
+                                              "17" = "Astrocytes",
+                                              "18" = "Astrocytes"))
+scrna_myeloid$annotation_fv_v1 = scrna_myeloid@active.ident
 write_rds(scrna_myeloid, paste0(wd, "TME_TIGIT/Seurat_subsets/scrna_immune_myeloid_mb.rds"))
 
 ###Lymphoid
