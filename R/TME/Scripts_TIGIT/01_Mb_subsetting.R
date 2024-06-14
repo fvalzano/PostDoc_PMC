@@ -97,6 +97,7 @@ scrna_lymphoid = read_rds(paste0(wd,"Seurat_subsets/Post_Annotation/scrna_immune
 Idents(scrna_lymphoid) = "Entity"
 scrna_lymphoid = subset(scrna_lymphoid, idents= ("Medulloblastoma"))
 scrna_lymphoid_list = SplitObject(scrna_lymphoid, split.by = "Dataset")
+scrna_lymphoid_list$SCPCA_MB = NULL
 for (i in names(scrna_lymphoid_list)) {
   DefaultAssay(scrna_lymphoid_list[[i]]) = "RNA"
   scrna_lymphoid_list[[i]] = SCTransform(scrna_lymphoid_list[[i]], vars.to.regress = c("percent_mito", "percent_ribo"), vst.flavor = "v2", assay = "RNA")
