@@ -213,6 +213,7 @@ for(i in unique(DEG_v1$cluster)){
              pAdjustMethod = "BH")
   write.csv2(gse[[i]], paste0(wd, "TME_TIGIT/Enrichment/Lymphoid/v1/Cluster_", i, ".csv"))
 }
+
 Idents(scrna_lymphoid) = "SCT_snn_res.1.2"
 scrna_lymphoid = RenameIdents(scrna_lymphoid, c("0" = "Naive T Cells",
                                               "1" = "Cytotoxic T Cells",
