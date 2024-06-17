@@ -64,8 +64,6 @@ for (i in reference) {
 Ref1_Myeloid = subset(seurat_objects[[1]], idents = c("TAM 2", "Monocytes", "TAM 1", "prol. TAM", "DC"))
 Ref2_Myeloid = subset(seurat_objects[[2]], idents = c("DC 1", "DC 2", "DC 3", "DC 4", "Monocytes", "prol. TAM", "TAM 1", "TAM 2"))
 Ref3_Myeloid = subset(seurat_objects[[3]], idents = c("Hypoxic Mg-TAM", "IFN Mg-TAM", "Mg-TAM", "Phago/Lipid Mg-TAM"))
-Ref1_Lymphoid = subset(seurat_objects[[1]], idents = c("B cells", "NK cells", "T cells"))
-Ref2_Lymphoid = subset(seurat_objects[[2]], idents = c("B cells", "NK cells", "Plasma B", "Regulatory T cells", "T cells"))
 
 #Get first level of annotation through SingleR's autoannotation 
 scrna_myeloid = read_rds(paste0(wd, "TME_TIGIT/Seurat_subsets/Post_Annotation/scrna_immune_myeloid_mb.rds"))
@@ -139,9 +137,9 @@ write_rds(scrna_myeloid, paste0(wd, "TME_TIGIT/Seurat_subsets/Post_Annotation/sc
 
 ###Lymphoid
 wd = "/hpc/pmc_kool/fvalzano/Rstudio_Test1/TME/TME_files_March24/"
-scrna_lymphoid = read_rds(paste0(wd,"Seurat_subsets/Post_Annotation/scrna_immune_lymphoid.rds"))
-Idents(scrna_lymphoid) = "Entity"
-scrna_lymphoid = subset(scrna_lymphoid, idents= ("Medulloblastoma"))
+scrna_mb = readRDS(paste0(wd, "TME_TIGIT/Seurat_subsets/scrna_mb.rds"))
+Idents(scrna_mb) = "SCT_snn_res.0.8"
+scrna_lymphoid = subset(scrna_mb, idents="31")
 scrna_lymphoid_list = SplitObject(scrna_lymphoid, split.by = "Dataset")
 scrna_lymphoid_list$SCPCA_MB = NULL
 for (i in names(scrna_lymphoid_list)) {
@@ -159,21 +157,72 @@ scrna_lymphoid = RunUMAP(scrna_lymphoid, reduction = "harmony", dims = 1:30, red
 scrna_lymphoid = FindNeighbors(object = scrna_lymphoid, reduction = "harmony", dims = 1:20)
 i = seq(0.1, 2, by = 0.1)
 scrna_lymphoid = FindClusters(scrna_lymphoid, resolution = i)
-scrna_lymphoid = PrepSCTFindMarkers(scrna_lymphoid)
-DEG = FindAllMarkers(scrna_lymphoid, group.by = "SCT_snn_res.1.2", min.pct=0.1,min.diff.pct=0.15, only.pos=T)
-Idents(scrna_lymphoid) = "SCT_snn_res.1.2"
-scrna_lymphoid = RenameIdents(scrna_lymphoid, c("0" = "Cytotoxic T Cells1",
-                                                "1" = "Cytotoxic T Cells2",
-                                                "2" = "Naive T Cells",
-                                                "3" = "NK Cells",
-                                                "4" = "T helper Cells",
-                                                "5" = "Intermediate Cells",
-                                                "6" = "Intermediate Cells",
-                                                "7" = "Cytotoxic T Cells3",
-                                                "8" = "Intermediate Cells",
-                                                "9" = "B Cells",
-                                                "10" = "T reg Cells",
-                                                "11" = "prolif. T Cells"))   
-scrna_lymphoid$annotation_fv_v2 = scrna_lymphoid@active.ident                                                                                   
 write_rds(scrna_lymphoid, paste0(wd, "TME_TIGIT/Seurat_subsets/Post_Annotation/scrna_immune_lymphoid_mb.rds"))
 
+#Load reference datasets and run SingleR autoannotation
+reference = list.files(paste0(wd,"Annotation_reference/Antunes_GBM/RDS_file"))
+seurat_objects=list()
+for (i in reference) {
+  seurat_objects[[i]] = read_rds(paste0(wd,"Annotation_reference/Antunes_GBM/RDS_file/", i))
+  Idents(seurat_objects[[i]]) = "cluster"
+}
+Ref1_Lymphoid = subset(seurat_objects[[1]], idents = c("B cells", "NK cells", "T cells"))
+Ref2_Lymphoid = subset(seurat_objects[[2]], idents = c("B cells", "NK cells", "Plasma B", "Regulatory T cells", "T cells"))
+
+#Get first level of annotation through SingleR's autoannotation 
+scrna_lymphoid = read_rds(paste0(wd, "TME_TIGIT/Seurat_subsets/Post_Annotation/scrna_immune_lymphoid_mb.rds"))
+annotations_top = SingleR(test = scrna_lymphoid@assays$RNA$counts,
+                          ref = list(Ref1_Lymphoid@assays$RNA$counts,
+                                     Ref2_Lymphoid@assays$RNA$counts),
+                          labels = list(Ref1_Lymphoid$cluster,
+                                        Ref2_Lymphoid$cluster),
+                          de.method="wilcox")
+transfer.anno = as.data.frame(annotations_top$labels, row.names = rownames(annotations_top))
+transfer.anno$`annotations_top$labels` = as.factor(transfer.anno$`annotations_top$labels`)
+scrna_lymphoid <- AddMetaData(scrna_lymphoid, transfer.anno, col.name = "Antunes_annotations_top")
+#Manual annotation of Treg cells
+
+scrna_lymphoid = PrepSCTFindMarkers(scrna_lymphoid)
+Idents(scrna_lymphoid) = "SCT_snn_res.1.2"
+DEG_v1 = FindAllMarkers(scrna_lymphoid, 
+                               only.pos = T, 
+                               min.pct = 0.12,
+                               min.diff.pct=0.1)
+DEG_v1 = DEG_v1[DEG_v1$p_val_adj <= 0.05,]
+write.csv2(DEG_v1, paste0(wd, "TME_TIGIT/DEG/Lymphoid/DEG_v1.csv"))
+#Setup Enrichment analysis 
+DEG_list = list()
+gse= list()
+DEG_list_IDs = list()
+DEG_vector = list()
+#Split master DEG analysis per cluster and run enrichment analysis
+for(i in unique(DEG_v1$cluster)){
+  DEG_list[[i]] = DEG_v1[DEG_v1$cluster ==i,]
+  DEG_list[[i]] = DEG_list[[i]][order(DEG_list[[i]]$avg_log2FC, decreasing = T),] 
+  DEG_list_IDs[[i]] = DEG_list[[i]]$gene
+  DEG_list[[i]] = DEG_list[[i]]$avg_log2FC
+  DEG_vector[[i]] = unlist(DEG_list[[i]])
+  names(DEG_vector[[i]]) = DEG_list_IDs[[i]]
+  DEG_vector[[i]] = na.omit(DEG_vector[[i]])
+  gse[[i]] <- enrichGO(gene=names(DEG_vector[[i]]),
+             ont ="BP", 
+             keyType = "SYMBOL", 
+             pvalueCutoff = 0.05, 
+             minGSSize = 5,
+             OrgDb = org.Hs.eg.db, 
+             pAdjustMethod = "BH")
+  write.csv2(gse[[i]], paste0(wd, "TME_TIGIT/Enrichment/Lymphoid/v1/Cluster_", i, ".csv"))
+}
+Idents(scrna_lymphoid) = "SCT_snn_res.1.2"
+scrna_lymphoid = RenameIdents(scrna_lymphoid, c("0" = "Naive T Cells",
+                                              "1" = "Cytotoxic T Cells",
+                                              "2" = "Cytotoxic T Cells",
+                                              "3" = "NK Cells",
+                                              "4" = "Cytotoxic T Cells",
+                                              "5" = "Intermediate Cells",
+                                              "6" = "T helper Cells",
+                                              "7" = "T reg Cells",
+                                              "8" = "B Cells",
+                                              "9" = "prolif. T Cells"))
+scrna_lymphoid$annotation_fv_v2 = scrna_lymphoid@active.ident
+write_rds(scrna_lymphoid, paste0(wd, "TME_TIGIT/Seurat_subsets/Post_Annotation/scrna_immune_lymphoid_mb.rds"))
