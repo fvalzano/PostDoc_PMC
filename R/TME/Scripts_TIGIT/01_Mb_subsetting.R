@@ -110,8 +110,24 @@ scrna_lymphoid = merge(x = scrna_lymphoid_list[[1]], y= scrna_lymphoid_list[-1],
 scrna_lymphoid = RunPCA (scrna_lymphoid, verbose = FALSE, assay = "SCT", npcs= 50, features = hvg_lymphoid_filtered)
 scrna_lymphoid = RunHarmony(scrna_lymphoid, group.by.vars = "Dataset", reduction = "pca", assay.use = "SCT", reduction.save = "harmony")
 scrna_lymphoid = RunUMAP(scrna_lymphoid, reduction = "harmony", dims = 1:30, reduction.name = "umap_harmony")
-scrna_lymphoid = FindNeighbors(object = scrna_lymphoid, reduction = "harmony", dims = 1:30)
+scrna_lymphoid = FindNeighbors(object = scrna_lymphoid, reduction = "harmony", dims = 1:20)
 i = seq(0.1, 2, by = 0.1)
 scrna_lymphoid = FindClusters(scrna_lymphoid, resolution = i)
+scrna_lymphoid = PrepSCTFindMarkers(scrna_lymphoid)
+DEG = FindAllMarkers(scrna_lymphoid, group.by = "SCT_snn_res.1.2", min.pct=0.1,min.diff.pct=0.15, only.pos=T)
+Idents(scrna_lymphoid) = "SCT_snn_res.1.2"
+scrna_lymphoid = RenameIdents(scrna_lymphoid, c("0" = "Cytotoxic T Cells1",
+                                                "1" = "Cytotoxic T Cells2",
+                                                "2" = "Naive T Cells",
+                                                "3" = "NK Cells",
+                                                "4" = "T helper Cells",
+                                                "5" = "Intermediate Cells",
+                                                "6" = "Intermediate Cells",
+                                                "7" = "Cytotoxic T Cells3",
+                                                "8" = "Intermediate Cells",
+                                                "9" = "B Cells",
+                                                "10" = "T reg Cells",
+                                                "11" = "prolif. T Cells"))
+
 write_rds(scrna_lymphoid, paste0(wd, "TME_TIGIT/Seurat_subsets/scrna_immune_lymphoid_mb.rds"))
 
