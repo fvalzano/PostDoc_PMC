@@ -4,7 +4,12 @@ library(SingleR)
 library(harmony)
 library(GeneNMF)
 library(UCell)
-
+library(enrichplot)
+library(enrichR)
+library(clusterProfiler)
+library(org.Hs.eg.db)
+library(DOSE)
+library(scran)
 ###All
 wd = "/hpc/pmc_kool/fvalzano/Rstudio_Test1/TME/TME_files_March24/"
 scrna_mb = read_rds(paste0(wd,"Seurat_subsets/Post_Entity_Splitting/scrna_harmony_Medulloblastoma.rds"))
@@ -28,9 +33,9 @@ write_rds(scrna_mb, paste0(wd, "TME_TIGIT/Seurat_subsets/scrna_mb.rds"))
 
 ###Myeloid
 wd = "/hpc/pmc_kool/fvalzano/Rstudio_Test1/TME/TME_files_March24/"
-scrna_myeloid = read_rds(paste0(wd,"Seurat_subsets/Post_Annotation/scrna_immune_myeloid.rds"))
-Idents(scrna_myeloid) = "Entity"
-scrna_myeloid = subset(scrna_myeloid, idents= ("Medulloblastoma"))
+scrna_mb = readRDS(paste0(wd, "TME_TIGIT/Seurat_subsets/scrna_mb.rds"))
+Idents(scrna_mb) = "SCT_snn_res.0.8"
+scrna_myeloid = subset(scrna_mb, idents="11")
 scrna_myeloid_list = SplitObject(scrna_myeloid, split.by = "Dataset")
 for (i in names(scrna_myeloid_list)) {
   DefaultAssay(scrna_myeloid_list[[i]]) = "RNA"
@@ -47,49 +52,90 @@ scrna_myeloid = RunUMAP(scrna_myeloid, reduction = "harmony", dims = 1:30, reduc
 scrna_myeloid = FindNeighbors(object = scrna_myeloid, reduction = "harmony", dims = 1:30)
 i = seq(0.1, 2, by = 0.1)
 scrna_myeloid = FindClusters(scrna_myeloid, resolution = i)
-Idents(scrna_myeloid) = "SCT_snn_res.1.2"
-scrna_myeloid = RenameIdents(scrna_myeloid, c("0" = "Activated TAM",
-                                              "1" = "Immunosuppressive TAM1",
-                                              "2" = "DC",
-                                              "3" = "Activated TAM",
-                                              "4" = "Proinflammatory Microglia1",
-                                              "5" = "Monocytes",
-                                              "6" = "Immunosuppressive TAM2",
-                                              "7" = "prolif. TAM",
-                                              "8" = "Immunosuppressive TAM3",
-                                              "9" = "Astrocytes1",
-                                              "10" = "Astrocytes2",
-                                              "11" = "Immunosuppressive TAM4",
-                                              "12" = "Astrocytes3",
-                                              "13" = "Proinflammatory Microglia2",
-                                              "14" = "Astrocytes4",
-                                              "15" = "MDSC",
-                                              "16" = "Damaged Cells",
-                                              "17" = "Astrocytes5",
-                                              "18" = "Astrocytes6"))
-scrna_myeloid$annotation_fv_v2 = scrna_myeloid@active.ident
-Idents(scrna_myeloid) = "SCT_snn_res.1.2"
+write_rds(scrna_myeloid, paste0(wd, "TME_TIGIT/Seurat_subsets/Post_Annotation/scrna_immune_myeloid_mb.rds"))
+
+#Load reference datasets and run SingleR autoannotation
+reference = list.files(paste0(wd,"Annotation_reference/Antunes_GBM/RDS_file"))
+seurat_objects=list()
+for (i in reference) {
+  seurat_objects[[i]] = read_rds(paste0(wd,"Annotation_reference/Antunes_GBM/RDS_file/", i))
+  Idents(seurat_objects[[i]]) = "cluster"
+}
+Ref1_Myeloid = subset(seurat_objects[[1]], idents = c("TAM 2", "Monocytes", "TAM 1", "prol. TAM", "DC"))
+Ref2_Myeloid = subset(seurat_objects[[2]], idents = c("DC 1", "DC 2", "DC 3", "DC 4", "Monocytes", "prol. TAM", "TAM 1", "TAM 2"))
+Ref3_Myeloid = subset(seurat_objects[[3]], idents = c("Hypoxic Mg-TAM", "IFN Mg-TAM", "Mg-TAM", "Phago/Lipid Mg-TAM"))
+Ref1_Lymphoid = subset(seurat_objects[[1]], idents = c("B cells", "NK cells", "T cells"))
+Ref2_Lymphoid = subset(seurat_objects[[2]], idents = c("B cells", "NK cells", "Plasma B", "Regulatory T cells", "T cells"))
+
+#Get first level of annotation through SingleR's autoannotation 
+scrna_myeloid = read_rds(paste0(wd, "TME_TIGIT/Seurat_subsets/Post_Annotation/scrna_immune_myeloid_mb.rds"))
+annotations_top = SingleR(test = scrna_myeloid@assays$RNA$counts,
+                          ref = list(Ref1_Myeloid@assays$RNA$counts,
+                                     Ref2_Myeloid@assays$RNA$counts,
+                                     Ref3_Myeloid@assays$RNA$counts),
+                          labels = list(Ref1_Myeloid$cluster,
+                                        Ref2_Myeloid$cluster,
+                                        Ref3_Myeloid$cluster),
+                          de.method="wilcox")
+transfer.anno = as.data.frame(annotations_top$labels, row.names = rownames(annotations_top))
+transfer.anno$`annotations_top$labels` = as.factor(transfer.anno$`annotations_top$labels`)
+scrna_myeloid <- AddMetaData(scrna_myeloid, transfer.anno, col.name = "Antunes_annotations_top")
+scrna_myeloid = PrepSCTFindMarkers(scrna_myeloid)
+Idents(scrna_myeloid) = "SCT_snn_res.1"
+DEG_v1 = FindAllMarkers(scrna_myeloid, 
+                               only.pos = T, 
+                               min.pct = 0.15,
+                               min.diff.pct=0.15)
+DEG_v1 = DEG_v1[DEG_v1$p_val_adj <= 0.05,]
+write.csv2(DEG_v1, paste0(wd, "TME_TIGIT/DEG/Myeloid/DEG_v1.csv"))
+#Setup Enrichment analysis 
+DEG_list = list()
+gse= list()
+DEG_list_IDs = list()
+DEG_vector = list()
+#Split master DEG analysis per cluster and run enrichment analysis
+for(i in unique(DEG_v1$cluster)){
+  DEG_list[[i]] = DEG_v1[DEG_v1$cluster ==i,]
+  DEG_list[[i]] = DEG_list[[i]][order(DEG_list[[i]]$avg_log2FC, decreasing = T),] 
+  DEG_list_IDs[[i]] = DEG_list[[i]]$gene
+  DEG_list[[i]] = DEG_list[[i]]$avg_log2FC
+  DEG_vector[[i]] = unlist(DEG_list[[i]])
+  names(DEG_vector[[i]]) = DEG_list_IDs[[i]]
+  DEG_vector[[i]] = na.omit(DEG_vector[[i]])
+  gse[[i]] <- enrichGO(gene=names(DEG_vector[[i]]),
+             ont ="BP", 
+             keyType = "SYMBOL", 
+             pvalueCutoff = 0.05, 
+             minGSSize = 5,
+             OrgDb = org.Hs.eg.db, 
+             pAdjustMethod = "BH")
+  write.csv2(gse[[i]], paste0(wd, "TME_TIGIT/Enrichment/Myeloid/v1/Cluster_", i, ".csv"))
+}
+Idents(scrna_myeloid) = "SCT_snn_res.1"
 scrna_myeloid = RenameIdents(scrna_myeloid, c("0" = "Activated TAM",
                                               "1" = "Immunosuppressive TAM",
-                                              "2" = "DC",
-                                              "3" = "Activated TAM",
-                                              "4" = "Proinflammatory Microglia",
+                                              "2" = "Activated TAM",
+                                              "3" = "Astrocytes",
+                                              "4" = "Proinflammatory Microglia1",
                                               "5" = "Monocytes",
                                               "6" = "Immunosuppressive TAM",
-                                              "7" = "prolif. TAM",
-                                              "8" = "Immunosuppressive TAM",
-                                              "9" = "Astrocytes",
+                                              "7" = "DC",
+                                              "8" = "Proinflammatory Microglia2",
+                                              "9" = "Hypoxic TAM",
                                               "10" = "Astrocytes",
                                               "11" = "Immunosuppressive TAM",
-                                              "12" = "Astrocytes",
-                                              "13" = "Proinflammatory Microglia",
-                                              "14" = "Astrocytes",
-                                              "15" = "MDSC",
-                                              "16" = "Damaged Cells",
-                                              "17" = "Astrocytes",
-                                              "18" = "Astrocytes"))
-scrna_myeloid$annotation_fv_v1 = scrna_myeloid@active.ident
-write_rds(scrna_myeloid, paste0(wd, "TME_TIGIT/Seurat_subsets/scrna_immune_myeloid_mb.rds"))
+                                              "12" = "Damaged Cells",
+                                              "13" = "Astrocytes",
+                                              "14" = "prolif. TAM",
+                                              "15" = "DC",
+                                              "16" = "Astrocytes",
+                                              "17" = "MDSC",
+                                              "18" = "Astrocytes",
+                                              "19" = "Astrocytes"))
+scrna_myeloid$annotation_fv_v2 = scrna_myeloid@active.ident
+write_rds(scrna_myeloid, paste0(wd, "TME_TIGIT/Seurat_subsets/Post_Annotation/scrna_immune_myeloid_mb.rds"))
+
+
 
 ###Lymphoid
 wd = "/hpc/pmc_kool/fvalzano/Rstudio_Test1/TME/TME_files_March24/"
@@ -127,7 +173,7 @@ scrna_lymphoid = RenameIdents(scrna_lymphoid, c("0" = "Cytotoxic T Cells1",
                                                 "8" = "Intermediate Cells",
                                                 "9" = "B Cells",
                                                 "10" = "T reg Cells",
-                                                "11" = "prolif. T Cells"))
-
-write_rds(scrna_lymphoid, paste0(wd, "TME_TIGIT/Seurat_subsets/scrna_immune_lymphoid_mb.rds"))
+                                                "11" = "prolif. T Cells"))   
+scrna_lymphoid$annotation_fv_v2 = scrna_lymphoid@active.ident                                                                                   
+write_rds(scrna_lymphoid, paste0(wd, "TME_TIGIT/Seurat_subsets/Post_Annotation/scrna_immune_lymphoid_mb.rds"))
 
