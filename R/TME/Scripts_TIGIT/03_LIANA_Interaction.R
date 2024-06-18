@@ -99,7 +99,7 @@ for (i in names(scrna_split)) {
     Idents(scrna_split[[i]]) = "annotation_fv_v2"
     liana_results[[i]] = liana_wrap(scrna_split[[i]]) 
     liana_results_aggregate[[i]]= liana_aggregate(liana_results[[i]])
-    write.csv2(paste0(wd, "/Rstudio_Test1/TME/TME_files_March24/TME_TIGIT/LIANA/"i,".csv"))
+    write.csv2(paste0(wd, "/Rstudio_Test1/TME/TME_files_March24/TME_TIGIT/LIANA/Liana_interaction_"i,".csv"))
 }
 #liana_results %>%
 #  liana_dotplot(source_groups = c("T reg Cells"),
