@@ -10,8 +10,16 @@ ligand_target_matrix <- readRDS(url("https://zenodo.org/record/3260758/files/lig
 wd = paste0(getwd(), "/Rstudio_Test1/TME/TME_files_March24/TME_TIGIT/")
 scrna = readRDS(paste0(wd, "Seurat_subsets/scrna_mb.rds"))
 #Rename idents according to tumor cells or not - based on known cell markers
+Idents(scrna) = "Dataset"
+#SCPCA_MB contributes minorly to the dataset, as the low number of cells creates problem for the SCT in the lymphoid compartment, deleting the dataset at this point from later analysis is the best choice
+scrna = subset(scrna, idents=c("MB_David",
+                                     "Piyush_MB",
+                                     "Riemondy",
+                                     "Vladoiu_Medulloblastoma"))
+
+
 Idents(scrna) = "SCT_snn_res.0.8"
-DimPlot(scrna)
+
 scrna = RenameIdents(scrna, c("0" = "Tumor Cells",
                               "1" = "Tumor Cells",
                               "2" = "Tumor Cells",
@@ -81,55 +89,25 @@ Meta_master = rbind(Meta_non_immune_cells, Meta_lymphoid_cells, Meta_myeloid_cel
 #Add Meta_master to full scrna object
 scrna = AddMetaData(scrna, Meta_master, "annotation_fv_v2")
 DimPlot(scrna, group.by = "annotation_fv_v2", label = F)
-
+rm(scrna_myeloid, scrna_lymphoid, scrna_subset)
 #Run LIANA interaction
-Idents(scrna) = "Dataset"
-#SCPCA_MB contributes minorly to the dataset, as the low number of cells creates problem for the SCT in the lymphoid compartment, deleting the dataset at this point from later analysis is the best choice
-scrna = subset(scrna, idents=c("MB_David",
-                                     "Piyush_MB",
-                                     "Riemondy",
-                                     "Vladoiu_Medulloblastoma"))
-
-Idents(scrna) = "Dataset"
-scrna_split = SplitObject(scrna, split.by = "Subtype")
+scrna_split = SplitObject(scrna, split.by = "Subgroup")
+rm(scrna)
 liana_results = list()
 liana_results_aggregate = list()
 for (i in names(scrna_split)) {
     Idents(scrna_split[[i]]) = "annotation_fv_v2"
     liana_results[[i]] = liana_wrap(scrna_split[[i]]) 
     liana_results_aggregate[[i]]= liana_aggregate(liana_results[[i]])
+    write.csv2(paste0(wd, "/Rstudio_Test1/TME/TME_files_March24/TME_TIGIT/LIANA/"i,".csv"))
 }
-liana_results %>%
-  liana_dotplot(source_groups = c("T reg Cells"),
-                target_groups = c("Tumor Cells"),
-                ntop = 30)
- liana_results %>%
-  liana_dotplot(source_groups = c("Tumor Cells"),
-                target_groups = c("T reg Cells"),
-                ntop = 30)
+#liana_results %>%
+#  liana_dotplot(source_groups = c("T reg Cells"),
+#                target_groups = c("Tumor Cells"),
+#                ntop = 30)
+# liana_results %>%
+#  liana_dotplot(source_groups = c("Tumor Cells"),
+#                target_groups = c("T reg Cells"),
+#                ntop = 30)
 
-liana_tigit = liana_results[liana_results$ligand.complex == c("TIGIT", "CTLA4"),]
-liana_dotplot(liana_tigit,
-              source_groups = c("T reg Cells"),
-              target_groups = c(liana_tigit$target),
-              ntop = 30)
 
-# filter results to cell types of interest
-tumor_results <- liana_results %>%
-  subset(source == "Tumor Cells" & target == "T reg Cells") %>%
-  dplyr::rename(ligand=ligand.complex, receptor=receptor.complex)
-
-# filter results to top N interactions
-n <- 50
-top_n_tumor <- tumor_results %>%
-  arrange(aggregate_rank) %>%
-  slice_head(n = n) %>%
-  mutate(id = fct_inorder(paste0(ligand, " -> ", receptor)))
-
-# visualize median rank
-top_n_tumor %>%
-  ggplot(aes(y = aggregate_rank, x = id)) +
-  geom_bar(stat = "identity") +
-  xlab("Interaction") + ylab("LIANA's aggregate rank") +
-  theme_cowplot() +
-  theme(axis.text.x = element_text(size = 8, angle = 60, hjust = 1, vjust = 1))
