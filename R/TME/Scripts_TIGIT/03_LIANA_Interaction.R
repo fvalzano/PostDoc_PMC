@@ -7,7 +7,7 @@ library(cowplot)
 #Load model weights
 ligand_target_matrix <- readRDS(url("https://zenodo.org/record/3260758/files/ligand_target_matrix.rds"))
 #Load scrna dataset
-scrna = readRDS("hpc/pmc_kool/fvalzano/Rstudio_Test1/TME/TME_files_March24/TME_TIGIT/Seurat_subsets/scrna_mb.rds"))
+scrna = readRDS("hpc/pmc_kool/fvalzano/Rstudio_Test1/TME/TME_files_March24/TME_TIGIT/Seurat_subsets/scrna_mb.rds")
 #Rename idents according to tumor cells or not - based on known cell markers
 Idents(scrna) = "Dataset"
 #SCPCA_MB contributes minorly to the dataset, as the low number of cells creates problem for the SCT in the lymphoid compartment, deleting the dataset at this point from later analysis is the best choice
