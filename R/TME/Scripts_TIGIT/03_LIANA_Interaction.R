@@ -7,8 +7,7 @@ library(cowplot)
 #Load model weights
 ligand_target_matrix <- readRDS(url("https://zenodo.org/record/3260758/files/ligand_target_matrix.rds"))
 #Load scrna dataset
-wd = paste0(getwd(), "/Rstudio_Test1/TME/TME_files_March24/TME_TIGIT/")
-scrna = readRDS(paste0(wd, "Seurat_subsets/scrna_mb.rds"))
+scrna = readRDS("hpc/pmc_kool/fvalzano/Rstudio_Test1/TME/TME_files_March24/TME_TIGIT/Seurat_subsets/scrna_mb.rds"))
 #Rename idents according to tumor cells or not - based on known cell markers
 Idents(scrna) = "Dataset"
 #SCPCA_MB contributes minorly to the dataset, as the low number of cells creates problem for the SCT in the lymphoid compartment, deleting the dataset at this point from later analysis is the best choice
@@ -76,8 +75,8 @@ Meta_non_immune_cells = as.data.frame(scrna_subset$Major_classes_FV)
 colnames(Meta_non_immune_cells) = "annotation"
 
 #Load annotated Myeloid and Lymphoid objects with detailed annotation
-scrna_lymphoid = readRDS(paste0(wd, "Seurat_subsets/Post_Annotation/scrna_immune_lymphoid_mb.rds"))
-scrna_myeloid = readRDS(paste0(wd, "Seurat_subsets/Post_Annotation/scrna_immune_myeloid_mb.rds"))
+scrna_lymphoid = readRDS("hpc/pmc_kool/fvalzano/Rstudio_Test1/TME/TME_files_March24/TME_TIGIT/Seurat_subsets/Post_Annotation/scrna_immune_lymphoid_mb.rds")
+scrna_myeloid = readRDS("hpc/pmc_kool/fvalzano/Rstudio_Test1/TME/TME_files_March24/TME_TIGIT/Seurat_subsets/Post_Annotation/scrna_immune_myeloid_mb.rds")
 #Extract cell barcodes with associated annotation from metadata slot with detailed cluster information
 Meta_myeloid_cells = as.data.frame(scrna_myeloid$annotation_fv_v2)
 colnames(Meta_myeloid_cells) = "annotation"
@@ -99,7 +98,7 @@ for (i in names(scrna_split)) {
     Idents(scrna_split[[i]]) = "annotation_fv_v2"
     liana_results[[i]] = liana_wrap(scrna_split[[i]]) 
     liana_results_aggregate[[i]]= liana_aggregate(liana_results[[i]])
-    write.csv2(paste0(wd, "/Rstudio_Test1/TME/TME_files_March24/TME_TIGIT/LIANA/Liana_interaction_"i,".csv"))
+    write.csv2("hpc/pmc_kool/fvalzano/Rstudio_Test1/TME/TME_files_March24/TME_TIGIT/Rstudio_Test1/TME/TME_files_March24/TME_TIGIT/LIANA/Liana_interaction_"i,".csv")
 }
 #liana_results %>%
 #  liana_dotplot(source_groups = c("T reg Cells"),
