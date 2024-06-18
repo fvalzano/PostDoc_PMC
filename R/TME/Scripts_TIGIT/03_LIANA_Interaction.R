@@ -1,7 +1,12 @@
-library(Seurat)
-library(readr)
+library(tidyverse)
 library(liana)
-
+library(nichenetr)
+library(Seurat)
+library(ggrepel)
+library(cowplot)
+#Load model weights
+ligand_target_matrix <- readRDS(url("https://zenodo.org/record/3260758/files/ligand_target_matrix.rds"))
+#Load scrna dataset
 wd = paste0(getwd(), "/Rstudio_Test1/TME/TME_files_March24/TME_TIGIT/")
 scrna = readRDS(paste0(wd, "Seurat_subsets/scrna_mb.rds"))
 #Rename idents according to tumor cells or not - based on known cell markers
