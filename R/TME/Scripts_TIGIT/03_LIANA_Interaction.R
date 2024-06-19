@@ -116,6 +116,8 @@ names(liana_results_aggregate) = sub("\\.csv$", "", names(liana_results_aggregat
 #Heatmap visualization of interaction frequency
 liana_trunc=list()
 labels = list()
+pdf("/hpc/pmc_kool/fvalzano/Rstudio_Test1/TME/TME_files_March24/TME_TIGIT/Plots/Liana_Heatmaps.pdf", width = 10, height=10)
+
 for (i in names(liana_results_aggregate)){
     # only keep interactions concordant between methods
     liana_trunc[[i]] = filter(liana_results_aggregate[[i]], aggregate_rank <= 0.05) # note that these pvals are already corrected
@@ -123,6 +125,7 @@ p = heat_freq(liana_trunc[[i]], pallette = c("white", "navy"), name = i)
 print(p)
 }
 
+dev.off()
     
     
 
