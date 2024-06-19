@@ -4,6 +4,7 @@ library(nichenetr)
 library(Seurat)
 library(ggrepel)
 library(cowplot)
+library(ComplexHeatmap)
 #Load model weights
 ligand_target_matrix <- readRDS(url("https://zenodo.org/record/3260758/files/ligand_target_matrix.rds"))
 #Load scrna dataset
@@ -94,36 +95,34 @@ scrna_split = SplitObject(scrna, split.by = "Subgroup")
 rm(scrna)
 liana_results = list()
 liana_results_aggregate = list()
+liana_trunc=list()
 #Loop liana interaction estimation in dataset split by MB subgroup - NB: Damaged cells have no importance here, remove them
 for (i in names(scrna_split)) {
     Idents(scrna_split[[i]]) = "annotation_fv_v2"
     idents = as.character(unique(scrna_split[[i]]$annotation_fv_v2))
     idents = idents[idents != "Damaged Cells"]
-    scrna_split[[i]] = subset(scrna_split[[i]], idents = (as.character(unique(scrna_split[[i]]$annotation_fv_v2))))
+    scrna_split[[i]] = subset(scrna_split[[i]], idents = idents)
     liana_results[[i]] = liana_wrap(scrna_split[[i]]) 
     liana_results_aggregate[[i]]= liana_aggregate(liana_results[[i]])
     write.csv2(liana_results_aggregate[[i]], paste0("/hpc/pmc_kool/fvalzano/Rstudio_Test1/TME/TME_files_March24/TME_TIGIT/LIANA/Liana_interaction_", i,".csv"))
 }
-
+#Load liana results and filter
 liana_files = list.files("/hpc/pmc_kool/fvalzano/Rstudio_Test1/TME/TME_files_March24/TME_TIGIT/LIANA")
 liana_results_aggregate = list()
 for (i in liana_files) {
    liana_results_aggregate[[i]] = read.csv2(paste0("/hpc/pmc_kool/fvalzano/Rstudio_Test1/TME/TME_files_March24/TME_TIGIT/LIANA/", i))
 }
+names(liana_results_aggregate) = sub("\\.csv$", "", names(liana_results_aggregate))
+#Heatmap visualization of interaction frequency
+liana_trunc=list()
+labels = list()
+for (i in names(liana_results_aggregate)){
+    # only keep interactions concordant between methods
+    liana_trunc[[i]] = filter(liana_results_aggregate[[i]], aggregate_rank <= 0.05) # note that these pvals are already corrected
+p = heat_freq(liana_trunc[[i]], pallette = c("white", "navy"), name = i) 
+print(p)
+}
 
-liana_trunc <- liana_results_aggregate$Liana_interaction_G3.csv %>%
-   # only keep interactions concordant between methods
-  filter(aggregate_rank <= 0.01) # note that these pvals are already corrected
-heat_freq(liana_trunc)
-
-
-liana_results_aggregate$Liana_interaction_G3_G4.csv %>%
-  liana_dotplot(source_groups = c("T reg Cells"),
-                target_groups = c("Tumor Cells"),
-                ntop = 30)
-# liana_results %>%
-#  liana_dotplot(source_groups = c("Tumor Cells"),
-#                target_groups = c("T reg Cells"),
-#                ntop = 30)
-
+    
+    
 
