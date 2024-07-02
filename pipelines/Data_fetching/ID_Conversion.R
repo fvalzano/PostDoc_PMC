@@ -8,6 +8,7 @@ Overview=Overview %>%
   mutate(across(where(is.character), str_trim))
 #Specify PMCIDs of interest
 IDs = c("806AAS", "222AAS", "745AAS")
+IDs = IDs[order(IDs, decreasing = F)]
 #Fetch the different IDs for sample type
 IDs_RNA_Patient_Biosource= Overview[Overview$PMCID %in% IDs,]$'RNAseq Patient Biosource'
 IDs_RNA_Tumoroid_Biomaterial= Overview[Overview$PMCID %in% IDs,]$'RNAseq Tumoroid Biomaterial'
