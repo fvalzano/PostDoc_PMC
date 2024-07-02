@@ -15,23 +15,23 @@ Date="20240701"
 Requester="Francesco"
 Output_folder="${Date}_${Requester}"
 cd Requests
-mkdir -p "$Output_folder/RNAseq_Patient_Biosource"
+mkdir -p "$Output_folder"
 cd ..
 RNAseq_Patient_Biosource_input_file="IDs/RNAseq_Patient_Biosource.txt"
 # Read each label in the input file
 while IFS= read -r label; do
-mkdir "Requests/$Output_folder/RNAseq_Patient_Biosource/$label"
+mkdir "Requests/$Output_folder"
     # Search for files containing the label in their name
-wget -m -r -nd -np -P "Requests/$Output_folder/RNAseq_Patient_Biosource/$label" --user fvalzano --password Brindisi.2021 -e robots=off "https://files.bioinf.prinsesmaximacentrum.nl/shares/PMCLAB2020-142/" --accept=${label}*gene_id.exon.counts.txt
+wget -m -r -nd -np -P "Requests/$Output_folder" --user fvalzano --password Brindisi.2021 -e robots=off "https://files.bioinf.prinsesmaximacentrum.nl/shares/PMCLAB2020-142/" --accept=${label}*gene_id.exon.counts.txt
 done < "$RNAseq_Patient_Biosource_input_file"
 
 cd Requests
-mkdir -p "$Output_folder/RNAseq_Tumoroid_Biomaterial"
+mkdir -p "$Output_folder"
 cd ..
 RNAseq_Tumoroid_Biomaterial_input_file="IDs/RNAseq_Tumoroid_Biomaterial.txt"
 # Read each label in the input file
 while IFS= read -r label; do
-mkdir "Requests/$Output_folder/RNAseq_Tumoroid_Biomaterial/$label"
+mkdir "Requests/$Output_folder"
     # Search for files containing the label in their name
-wget -m -r -nd -np -P "Requests/$Output_folder/RNAseq_Tumoroid_Biomaterial/$label" --user fvalzano --password Brindisi.2021 -e robots=off "https://files.bioinf.prinsesmaximacentrum.nl/shares/PMCLAB2020-142/" --accept=${label}*gene_id.exon.counts.txt
+wget -m -r -nd -np -P "Requests/$Output_folder" --user fvalzano --password Brindisi.2021 -e robots=off "https://files.bioinf.prinsesmaximacentrum.nl/shares/PMCLAB2020-142/" --accept=${label}*gene_id.exon.counts.txt
 done < "$RNAseq_Tumoroid_Biomaterial_input_file"
