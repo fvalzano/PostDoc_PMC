@@ -52,8 +52,12 @@ res <- results(dds)
 resLFC <- lfcShrink(dds, coef="material_Tumoroid_vs_Patient", type="apeglm")
 DEG = as.data.frame(resLFC)
 DEG = DEG[DEG$padj<=0.05,]
-
+DEG = na.omit(DEG)
+write.csv(DEG, paste0("/hpc/pmc_kool/fvalzano/PostDoc_PMC/pipelines/DESeq2/Requests/", result_directory, "/DEG.csv"))
 
 #Vst normalization and dimensionality reduction analysis
 vsd <- vst(dds, blind=FALSE)
+pdf(paste0("/hpc/pmc_kool/fvalzano/PostDoc_PMC/pipelines/DESeq2/Requests/", result_directory, "/PCA.pdf"), width=5, height=5)
 plotPCA(vsd, intgroup=c("material")) + stat_ellipse()
+plotPCA(vsd, intgroup=c("material", "IDs"))
+dev.off()
