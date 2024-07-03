@@ -125,7 +125,7 @@ scrna_mimic = RunUMAP(scrna_mimic, reduction = "harmony", dims = 1:30, reduction
 i = seq(0.2, 1, by = 0.2)
 scrna_mimic <- FindClusters(scrna_mimic, resolution = i)
 DimPlot(scrna_mimic, group.by = "orig.ident")
-write_rds(scrna_mimic, "All/scrna_mimic_all.rds")
+write_rds(scrna_mimic, "/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/All/scrna_mimic_all.rds")
 ```
 ```{r Data Merging -Important in Seurat v5- SCT Normalization + CCA Integration, eval=FALSE, include=FALSE}
 seurat_objects=qc_seurat_objects
@@ -134,13 +134,12 @@ seurat_objects[[1]] = NULL
 seurat_objects = merge(x = seurat_objects_first, y= c(seurat_objects), merge.data = TRUE, project = "MIMIC") 
 seurat_objects = SCTransform(seurat_objects, vars.to.regress = c("percent.mt", "percent.ribo"), vst.flavor = "v2")
 seurat_objects<-RunPCA (seurat_objects, verbose = FALSE)
-write_rds(seurat_objects, "scrna_SCT_Normalized.rds")
 scrna_mimic <- IntegrateLayers(object = seurat_objects, method = CCAIntegration, orig.reduction = "pca", normalization.method = "SCT")
 scrna_mimic <- FindNeighbors(object = scrna_mimic, reduction = "integrated.dr", dims = 1:30)
 i = seq(0.2, 1, by = 0.2)
 scrna_mimic <- FindClusters(scrna_mimic, resolution = i)
 scrna_mimic = RunUMAP(scrna_mimic, reduction = "integrated.dr", dims = 1:30, reduction.name = "umap")
-#write_rds(scrna_mimic, "scrna_SCT_CCA/scrna.rds")
+#write_rds(scrna_mimic, "/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/scrna_SCT_CCA/scrna.rds")
 ```
 ```{r Data Merging -Important in Seurat v5- Log Normalization + Harmony Integration, eval=FALSE, include=FALSE}
 seurat_objects=qc_seurat_objects
@@ -156,7 +155,7 @@ scrna_mimic <- FindNeighbors(object = scrna_mimic, reduction = "harmony", dims =
 i = seq(0.2, 1, by = 0.2)
 scrna_mimic <- FindClusters(scrna_mimic, resolution = i)
 scrna_mimic = RunUMAP(scrna_mimic, reduction = "harmony", dims = 1:30, reduction.name = "umap")
-#write_rds(scrna_mimic, "scrna_Log_Harmony/scrna.rds")
+#write_rds(scrna_mimic, "/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/scrna_Log_Harmony/scrna.rds")
 DimPlot(scrna_mimic, split.by = "orig.ident")
 ```
 ```{r Data Merging -Important in Seurat v5- Log Normalization + CCA Integration, eval=FALSE, include=FALSE}
@@ -173,7 +172,7 @@ scrna_mimic <- FindNeighbors(object = scrna_mimic, reduction = "integrated.dr", 
 i = seq(0.2, 1, by = 0.2)
 scrna_mimic <- FindClusters(scrna_mimic, resolution = i)
 scrna_mimic = RunUMAP(scrna_mimic, reduction = "integrated.dr", dims = 1:50, reduction.name = "umap")
-#write_rds(scrna_mimic, "scrna_Log_CCA/scrna.rds")
+#write_rds(scrna_mimic, "/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/scrna_Log_CCA/scrna.rds")
 DimPlot(scrna_mimic, group.by = "orig.ident")
 ```
 ##Metadata curation
@@ -220,12 +219,12 @@ disease.ident[1:2] = NULL
 scrna_mimic = AddMetaData(scrna_mimic, metadata = disease.ident, col.name = "Cancer.type")
 DimPlot(scrna_mimic, group.by = "Cancer.type")
 
-write_rds(scrna_mimic, "All/scrna_mimic_all.rds")
+write_rds(scrna_mimic, "/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/All/scrna_mimic_all.rds")
 
 ```
 ##Trajectory + pseudotime
 ```{r Trajectory and Pseudotime by monocle3}
-scrna_mimic = read_rds("All/scrna_mimic_all.rds")
+scrna_mimic = read_rds("/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/All/scrna_mimic_all.rds")
 cds_mimic = as.cell_data_set(scrna_mimic)
 #partitions:
 cds_mimic <- cluster_cells(cds_mimic, resolution=1e-3)
@@ -540,7 +539,7 @@ scrna_mimic <- FindNeighbors(object = scrna_mimic, reduction = "integrated.dr", 
 i = seq(0.2, 1, by = 0.2)
 scrna_mimic <- FindClusters(scrna_mimic, resolution = i)
 scrna_mimic = RunUMAP(scrna_mimic, reduction = "integrated.dr", dims = 1:30, reduction.name = "umap")
-#write_rds(scrna_mimic, "scrna_SCT_CCA/scrna.rds")
+#write_rds(scrna_mimic, "/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/scrna_SCT_CCA/scrna_mb.rds")
 ```
 ```{r Data Merging -Important in Seurat v5- Log Normalization + Harmony Integration, eval=FALSE, include=FALSE}
 seurat_objects=qc_seurat_objects
@@ -556,7 +555,7 @@ scrna_mimic <- FindNeighbors(object = scrna_mimic, reduction = "harmony", dims =
 i = seq(0.2, 1, by = 0.2)
 scrna_mimic <- FindClusters(scrna_mimic, resolution = i)
 scrna_mimic = RunUMAP(scrna_mimic, reduction = "harmony", dims = 1:30, reduction.name = "umap")
-#write_rds(scrna_mimic, "scrna_Log_Harmony/scrna.rds")
+#write_rds(scrna_mimic, "/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/scrna_Log_Harmony/scrna_mb.rds")
 DimPlot(scrna_mimic, split.by = "orig.ident")
 ```
 ```{r Data Merging -Important in Seurat v5- Log Normalization + CCA Integration, eval=FALSE, include=FALSE}
@@ -573,7 +572,7 @@ scrna_mimic <- FindNeighbors(object = scrna_mimic, reduction = "integrated.dr", 
 i = seq(0.2, 1, by = 0.2)
 scrna_mimic <- FindClusters(scrna_mimic, resolution = i)
 scrna_mimic = RunUMAP(scrna_mimic, reduction = "integrated.dr", dims = 1:50, reduction.name = "umap")
-#write_rds(scrna_mimic, "scrna_Log_CCA/scrna.rds")
+#write_rds(scrna_mimic, "/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/scrna_Log_CCA/scrna_mb.rds")
 DimPlot(scrna_mimic, group.by = "orig.ident")
 ```
 ##Metadata curation_MB
@@ -620,12 +619,12 @@ disease.ident[1:2] = NULL
 scrna_mimic = AddMetaData(scrna_mimic, metadata = disease.ident, col.name = "Cancer.type")
 DimPlot(scrna_mimic, group.by = "Cancer.type")
 
-write_rds(scrna_mimic, "MB/scrna_mimic_mb.rds")
+write_rds(scrna_mimic, "/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/MB/scrna_mimic_mb.rds")
 
 ```
 ```{r Cell-type annotation through SingleR}
-scrna_mimic = read_rds("MB/scrna_mimic_mb.rds")
-scrna_kaesmann = readRDS(file = "~/Cerebellum Development/Kaesmann/seurat.rds")
+scrna_mimic = read_rds("/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/MB/scrna_mimic_mb.rds")
+scrna_kaesmann = readRDS(file = "/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum Development/Kaesmann/seurat.rds")
 scrna_kaesmann@assays[["RNA"]]@counts = scrna_kaesmann@assays[["RNA"]]@data  
 scrna_kaesmann_subsampled <- scrna_kaesmann[, sample(colnames(scrna_kaesmann), size =ncol(scrna_mimic), replace=F)]
 genes=scrna_kaesmann_subsampled@assays[["RNA"]]@meta.features$feature_name
@@ -644,8 +643,8 @@ transfer.anno = as.data.frame(annotations$labels, row.names = rownames(annotatio
 transfer.anno$`annotations$labels` = as.factor(transfer.anno$`annotations$labels`)
 scrna_mimic <- AddMetaData(scrna_mimic, transfer.anno, col.name = "precisestlabel")
 DimPlot(scrna_mimic, reduction="umap", group.by = "precisestlabel", label = T) 
-write_rds(scrna_mimic, "MB/scrna_mimic_mb.rds")
-write_rds(annotations, "MB/Annotations/annotations_analysis_fromSingleR.rds")
+write_rds(scrna_mimic, "hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/MB/scrna_mimic_mb.rds")
+write_rds(annotations, "hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/MB/Annotations/annotations_analysis_fromSingleR.rds")
 Idents(scrna_mimic) = "precisestlabel"
 for (i in unique(Idents(scrna_mimic))) {
   scrna_mimic = AddMetaData(scrna_mimic, metadata = annotations$scores[,i], col.name = i)
@@ -988,13 +987,12 @@ seurat_objects[[1]] = NULL
 seurat_objects = merge(x = seurat_objects_first, y= c(seurat_objects), merge.data = TRUE, project = "MIMIC") 
 seurat_objects = SCTransform(seurat_objects, vars.to.regress = c("percent.mt", "percent.ribo"), vst.flavor = "v2")
 seurat_objects<-RunPCA (seurat_objects, verbose = FALSE)
-write_rds(seurat_objects, "scrna_SCT_Normalized.rds")
 scrna_mimic <- IntegrateLayers(object = seurat_objects, method = CCAIntegration, orig.reduction = "pca", normalization.method = "SCT")
 scrna_mimic <- FindNeighbors(object = scrna_mimic, reduction = "integrated.dr", dims = 1:30)
 i = seq(0.2, 1, by = 0.2)
 scrna_mimic <- FindClusters(scrna_mimic, resolution = i)
 scrna_mimic = RunUMAP(scrna_mimic, reduction = "integrated.dr", dims = 1:30, reduction.name = "umap")
-#write_rds(scrna_mimic, "scrna_SCT_CCA/scrna.rds")
+#write_rds(scrna_mimic, "hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/scrna_SCT_CCA/scrna.rds")
 ```
 ```{r Data Merging -Important in Seurat v5- Log Normalization + Harmony Integration, eval=FALSE, include=FALSE}
 seurat_objects=qc_seurat_objects
@@ -1010,7 +1008,7 @@ scrna_mimic <- FindNeighbors(object = scrna_mimic, reduction = "harmony", dims =
 i = seq(0.2, 1, by = 0.2)
 scrna_mimic <- FindClusters(scrna_mimic, resolution = i)
 scrna_mimic = RunUMAP(scrna_mimic, reduction = "harmony", dims = 1:30, reduction.name = "umap")
-#write_rds(scrna_mimic, "scrna_Log_Harmony/scrna.rds")
+#write_rds(scrna_mimic, "hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/scrna_Log_Harmony/scrna.rds")
 DimPlot(scrna_mimic, split.by = "orig.ident")
 ```
 ```{r Data Merging -Important in Seurat v5- Log Normalization + CCA Integration, eval=FALSE, include=FALSE}
@@ -1027,7 +1025,7 @@ scrna_mimic <- FindNeighbors(object = scrna_mimic, reduction = "integrated.dr", 
 i = seq(0.2, 1, by = 0.2)
 scrna_mimic <- FindClusters(scrna_mimic, resolution = i)
 scrna_mimic = RunUMAP(scrna_mimic, reduction = "integrated.dr", dims = 1:50, reduction.name = "umap")
-#write_rds(scrna_mimic, "scrna_Log_CCA/scrna.rds")
+#write_rds(scrna_mimic, "hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/scrna_Log_CCA/scrna.rds")
 DimPlot(scrna_mimic, group.by = "orig.ident")
 ```
 ##Metadata curation_EP
@@ -1074,7 +1072,7 @@ disease.ident[1:2] = NULL
 scrna_mimic = AddMetaData(scrna_mimic, metadata = disease.ident, col.name = "Cancer.type")
 DimPlot(scrna_mimic, split.by = "Cancer.type")
 
-write_rds(scrna_mimic, "EP/scrna_mimic_ep.rds")
+write_rds(scrna_mimic, "hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/EP/scrna_mimic_ep.rds")
 
 ```
 ```{r Cell-type annotation through SingleR}
@@ -1098,8 +1096,8 @@ transfer.anno = as.data.frame(annotations$labels, row.names = rownames(annotatio
 transfer.anno$`annotations$labels` = as.factor(transfer.anno$`annotations$labels`)
 scrna_mimic <- AddMetaData(scrna_mimic, transfer.anno, col.name = "precisestlabel")
 DimPlot(scrna_mimic, reduction="umap", group.by = "precisestlabel", label = T) 
-write_rds(scrna_mimic, "EP/scrna_mimic_ep.rds")
-write_rds(annotations, "EP/Annotations/annotations_analysis_fromSingleR.rds")
+write_rds(scrna_mimic, "hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/EP/scrna_mimic_ep.rds")
+write_rds(annotations, "hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/EP/Annotations/annotations_analysis_fromSingleR.rds")
 Idents(scrna_mimic) = "precisestlabel"
 for (i in unique(Idents(scrna_mimic))) {
   scrna_mimic = AddMetaData(scrna_mimic, metadata = annotations$scores[,i], col.name = i)
@@ -1133,7 +1131,7 @@ DimPlot(scrna_mimic, split.by = "doublets")
 ```
 ##Trajectory + pseudotime_EP
 ```{r Trajectory and Pseudotime by monocle3}
-scrna_mimic = read_rds("EP/scrna_mimic_ep.rds")
+scrna_mimic = read_rds("hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/EP/scrna_mimic_ep.rds")
 cds_mimic = as.cell_data_set(scrna_mimic)
 #partitions:
 cds_mimic <- cluster_cells(cds_mimic, resolution=1e-3)
@@ -1434,6 +1432,7 @@ scrna_integrated = RenameIdents(scrna_integrated, c("0" = "GC/UBC",
                                                     "41" = "41", #Podocytes?
                                                     "42" = "Astrocyte",
                                                     "43" = "GC_4"))
+
 
 scrna_integrated$anno_stage1 = scrna_integrated@active.ident
 write_rds(scrna_integrated, "/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/MB/Integration_fetal_mb/scrna_integrated.rds")
