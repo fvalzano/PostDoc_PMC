@@ -57,8 +57,10 @@ rm(sample_data, raw_reads) #Housekeeping
 
 ```
 ```{r QC, include=FALSE}
+#Save QC plots
 pdf("/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/QC.pdf", width=5, height=5)
 for (i in filenames) {
+  #calculation of threshold is performed either by IsOutlier or via expliciting the formula
   min.nFeature.thr = median(seurat_objects[[i]]$nFeature_RNA) - 3*mad(seurat_objects[[i]]$nFeature_RNA)
   max.nFeature.thr = median(seurat_objects[[i]]$nFeature_RNA) + 3*mad(seurat_objects[[i]]$nFeature_RNA)
   max.nCount.thr = median(seurat_objects[[i]]$nCount_RNA) + 3*mad(seurat_objects[[i]]$nCount_RNA)
@@ -84,10 +86,11 @@ for (i in filenames) {
 }
 dev.off()
 rm(p,QC)
+#Apply QC
 qc_seurat_objects <- list()
 for (i in filenames) {
-  seurat_objects[[i]]$nFeature.thr = isOutlier(seurat_objects[[i]]$nFeature_RNA, nmads=3, type="both", log=TRUE)
-   seurat_objects[[i]]$nCount.thr = isOutlier(seurat_objects[[i]]$nCount_RNA, nmads=3, type="higher", log=TRUE)
+  seurat_objects[[i]]$nFeature.thr = isOutlier(seurat_objects[[i]]$nFeature_RNA, nmads=3, type="both", log=FALSE)
+   seurat_objects[[i]]$nCount.thr = isOutlier(seurat_objects[[i]]$nCount_RNA, nmads=3, type="higher", log=FALSE)
    seurat_objects[[i]] <- seurat_objects[[i]][,!(seurat_objects[[i]]$nCount.thr |  seurat_objects[[i]]$nFeature.thr)]
    seurat_objects[[i]] = subset(seurat_objects[[i]], subset = percent.mt <5 &
                                   percent.ribo<5)
@@ -110,71 +113,70 @@ seurat_objects =  merge(x = seurat_objects_first, y= c(seurat_objects), merge.da
 seurat_objects = SCTransform(seurat_objects, vars.to.regress = c("percent.mt", "percent.ribo"), vst.flavor = "v2", assay = "RNA")
 seurat_objects= CellCycleScoring(seurat_objects, s.features = cc.genes.updated.2019$s.genes, g2m.features = cc.genes.updated.2019$g2m.genes, assay = 'SCT')
 seurat_objects = SCTransform(seurat_objects, vars.to.regress = c("percent.mt", "percent.ribo", 'S.Score', 'G2M.Score'), vst.flavor = "v2", assay = "RNA")
-scrna_mimic_merge<-RunPCA (seurat_objects, verbose = FALSE)
-scrna_mimic_merge <- FindNeighbors(object = scrna_mimic_merge, reduction = "pca", dims = 1:30)
-scrna_mimic_merge = RunUMAP(scrna_mimic_merge, reduction = "pca", dims = 1:30, reduction.name = "umap")
+scrna_mimic<-RunPCA (seurat_objects, verbose = FALSE)
+scrna_mimic <- FindNeighbors(object = scrna_mimic, reduction = "pca", dims = 1:30)
+scrna_mimic = RunUMAP(scrna_mimic, reduction = "pca", dims = 1:30, reduction.name = "umap")
 i = seq(0.2, 1, by = 0.2)
-scrna_mimic_merge <- FindClusters(scrna_mimic_merge, resolution = i)
-DimPlot(scrna_mimic_merge, label = T, group.by = "orig.ident")
+scrna_mimic <- FindClusters(scrna_mimic, resolution = i)
 ```
 ```{r Harmony Integration}
-scrna_mimic<-RunPCA(seurat_objects, verbose = FALSE)
 scrna_mimic <- IntegrateLayers(object = scrna_mimic, method = HarmonyIntegration, orig.reduction = "pca", normalization.method = "SCT")
 scrna_mimic <- FindNeighbors(object = scrna_mimic, reduction = "harmony", dims = 1:30)
-scrna_mimic = RunUMAP(scrna_mimic, reduction = "harmony", dims = 1:30, reduction.name = "umap")
+scrna_mimic = RunUMAP(scrna_mimic, reduction = "harmony", dims = 1:30, reduction.name = "umap_harmony")
 i = seq(0.2, 1, by = 0.2)
 scrna_mimic <- FindClusters(scrna_mimic, resolution = i)
 DimPlot(scrna_mimic, group.by = "orig.ident")
 write_rds(scrna_mimic, "/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/All/scrna_mimic_all.rds")
 ```
-```{r Data Merging -Important in Seurat v5- SCT Normalization + CCA Integration, eval=FALSE, include=FALSE}
-seurat_objects=qc_seurat_objects
-seurat_objects_first = seurat_objects[[1]]
-seurat_objects[[1]] = NULL
-seurat_objects = merge(x = seurat_objects_first, y= c(seurat_objects), merge.data = TRUE, project = "MIMIC") 
-seurat_objects = SCTransform(seurat_objects, vars.to.regress = c("percent.mt", "percent.ribo"), vst.flavor = "v2")
-seurat_objects<-RunPCA (seurat_objects, verbose = FALSE)
-scrna_mimic <- IntegrateLayers(object = seurat_objects, method = CCAIntegration, orig.reduction = "pca", normalization.method = "SCT")
-scrna_mimic <- FindNeighbors(object = scrna_mimic, reduction = "integrated.dr", dims = 1:30)
-i = seq(0.2, 1, by = 0.2)
-scrna_mimic <- FindClusters(scrna_mimic, resolution = i)
-scrna_mimic = RunUMAP(scrna_mimic, reduction = "integrated.dr", dims = 1:30, reduction.name = "umap")
-#write_rds(scrna_mimic, "/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/scrna_SCT_CCA/scrna.rds")
-```
-```{r Data Merging -Important in Seurat v5- Log Normalization + Harmony Integration, eval=FALSE, include=FALSE}
-seurat_objects=qc_seurat_objects
-seurat_objects_first = seurat_objects[[1]]
-seurat_objects[[1]] = NULL
-seurat_objects = merge(x = seurat_objects_first, y= c(seurat_objects), merge.data = TRUE, project = "MIMIC") 
-seurat_objects = NormalizeData(seurat_objects, normalization.method = "LogNormalize", scale.factor = 10000)
-seurat_objects = FindVariableFeatures(seurat_objects, selection.method = "vst", nfeatures = 2000)
-seurat_objects = ScaleData(seurat_objects, features = rownames(seurat_objects))#, vars.to.regress = c("percent.mt", "percent.ribo"))
-seurat_objects<-RunPCA (seurat_objects, verbose = FALSE)
-scrna_mimic <- IntegrateLayers(object = seurat_objects, method = HarmonyIntegration, orig.reduction = "pca", normalization.method = "LogNormalize")
-scrna_mimic <- FindNeighbors(object = scrna_mimic, reduction = "harmony", dims = 1:30)
-i = seq(0.2, 1, by = 0.2)
-scrna_mimic <- FindClusters(scrna_mimic, resolution = i)
-scrna_mimic = RunUMAP(scrna_mimic, reduction = "harmony", dims = 1:30, reduction.name = "umap")
-#write_rds(scrna_mimic, "/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/scrna_Log_Harmony/scrna.rds")
-DimPlot(scrna_mimic, split.by = "orig.ident")
-```
-```{r Data Merging -Important in Seurat v5- Log Normalization + CCA Integration, eval=FALSE, include=FALSE}
-seurat_objects=qc_seurat_objects
-seurat_objects_first = seurat_objects[[1]]
-seurat_objects[[1]] = NULL
-seurat_objects = merge(x = seurat_objects_first, y= c(seurat_objects), merge.data = TRUE, project = "MIMIC") 
-seurat_objects = NormalizeData(seurat_objects, normalization.method = "LogNormalize", scale.factor = 10000)
-seurat_objects = FindVariableFeatures(seurat_objects, selection.method = "vst", nfeatures = 2000)
-seurat_objects = ScaleData(seurat_objects, features = rownames(seurat_objects), vars.to.regress = c("percent.mt", "percent.ribo"))
-seurat_objects<-RunPCA (seurat_objects, verbose = FALSE)
-scrna_mimic <- IntegrateLayers(object = seurat_objects, method = CCAIntegration, orig.reduction = "pca", normalization.method = "LogNormalize")
-scrna_mimic <- FindNeighbors(object = scrna_mimic, reduction = "integrated.dr", dims = 1:50)
-i = seq(0.2, 1, by = 0.2)
-scrna_mimic <- FindClusters(scrna_mimic, resolution = i)
-scrna_mimic = RunUMAP(scrna_mimic, reduction = "integrated.dr", dims = 1:50, reduction.name = "umap")
-#write_rds(scrna_mimic, "/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/scrna_Log_CCA/scrna.rds")
-DimPlot(scrna_mimic, group.by = "orig.ident")
-```
+#Decided for SCT normalization and Harmony Integration, rest of the strategies are blanked from the main code
+#```{r Data Merging -Important in Seurat v5- SCT Normalization + CCA Integration, eval=FALSE, include=FALSE}
+#seurat_objects=qc_seurat_objects
+#seurat_objects_first = seurat_objects[[1]]
+#seurat_objects[[1]] = NULL
+#seurat_objects = merge(x = seurat_objects_first, y= c(seurat_objects), merge.data = TRUE, project = "MIMIC") 
+#seurat_objects = SCTransform(seurat_objects, vars.to.regress = c("percent.mt", "percent.ribo"), vst.flavor = "v2")
+#seurat_objects<-RunPCA (seurat_objects, verbose = FALSE)
+#scrna_mimic <- IntegrateLayers(object = seurat_objects, method = CCAIntegration, orig.reduction = "pca", normalization.method = "SCT")
+#scrna_mimic <- FindNeighbors(object = scrna_mimic, reduction = "integrated.dr", dims = 1:30)
+#i = seq(0.2, 1, by = 0.2)
+#scrna_mimic <- FindClusters(scrna_mimic, resolution = i)
+#scrna_mimic = RunUMAP(scrna_mimic, reduction = "integrated.dr", dims = 1:30, reduction.name = "umap")
+##write_rds(scrna_mimic, "/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/scrna_SCT_CCA/scrna.rds")
+#```
+#```{r Data Merging -Important in Seurat v5- Log Normalization + Harmony Integration, eval=FALSE, include=FALSE}
+#seurat_objects=qc_seurat_objects
+#seurat_objects_first = seurat_objects[[1]]
+#seurat_objects[[1]] = NULL
+#seurat_objects = merge(x = seurat_objects_first, y= c(seurat_objects), merge.data = TRUE, project = "MIMIC") 
+#seurat_objects = NormalizeData(seurat_objects, normalization.method = "LogNormalize", scale.factor = 10000)
+#seurat_objects = FindVariableFeatures(seurat_objects, selection.method = "vst", nfeatures = 2000)
+#seurat_objects = ScaleData(seurat_objects, features = rownames(seurat_objects))#, vars.to.regress = c("percent.mt", "percent.ribo"))
+#seurat_objects<-RunPCA (seurat_objects, verbose = FALSE)
+#scrna_mimic <- IntegrateLayers(object = seurat_objects, method = HarmonyIntegration, orig.reduction = "pca", normalization.method = "LogNormalize")
+#scrna_mimic <- FindNeighbors(object = scrna_mimic, reduction = "harmony", dims = 1:30)
+#i = seq(0.2, 1, by = 0.2)
+#scrna_mimic <- FindClusters(scrna_mimic, resolution = i)
+#scrna_mimic = RunUMAP(scrna_mimic, reduction = "harmony", dims = 1:30, reduction.name = "umap")
+##write_rds(scrna_mimic, "/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/scrna_Log_Harmony/scrna.rds")
+#DimPlot(scrna_mimic, split.by = "orig.ident")
+#```
+#```{r Data Merging -Important in Seurat v5- Log Normalization + CCA Integration, eval=FALSE, include=FALSE}
+#seurat_objects=qc_seurat_objects
+#seurat_objects_first = seurat_objects[[1]]
+#seurat_objects[[1]] = NULL
+#seurat_objects = merge(x = seurat_objects_first, y= c(seurat_objects), merge.data = TRUE, project = "MIMIC") 
+#seurat_objects = NormalizeData(seurat_objects, normalization.method = "LogNormalize", scale.factor = 10000)
+#seurat_objects = FindVariableFeatures(seurat_objects, selection.method = "vst", nfeatures = 2000)
+#seurat_objects = ScaleData(seurat_objects, features = rownames(seurat_objects), vars.to.regress = c("percent.mt", "percent.ribo"))
+#seurat_objects<-RunPCA (seurat_objects, verbose = FALSE)
+#scrna_mimic <- IntegrateLayers(object = seurat_objects, method = CCAIntegration, orig.reduction = "pca", normalization.method = "LogNormalize")
+#scrna_mimic <- FindNeighbors(object = scrna_mimic, reduction = "integrated.dr", dims = 1:50)
+#i = seq(0.2, 1, by = 0.2)
+#scrna_mimic <- FindClusters(scrna_mimic, resolution = i)
+#scrna_mimic = RunUMAP(scrna_mimic, reduction = "integrated.dr", dims = 1:50, reduction.name = "umap")
+##write_rds(scrna_mimic, "/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/scrna_Log_CCA/scrna.rds")
+#DimPlot(scrna_mimic, group.by = "orig.ident")
+#```
 ##Metadata curation
 ```{r MimicID}
 metadata_sequencing = readxl::read_xlsx("/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Metadata.xlsx", sheet = 1)
