@@ -2,6 +2,7 @@ library(Seurat)
 library(readr)
 library(harmony)
 
+
 Seurat_files = list.files("Seurat_objects")
 Seurat_files[c(5,7,11)] = NA
 Seurat_files = na.omit(Seurat_files)
