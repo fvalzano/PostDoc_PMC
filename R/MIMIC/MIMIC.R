@@ -35,9 +35,9 @@ library(scater)
 ```
 ```{r MIMIC input files, include=FALSE}
 base_directory = getwd() #Make sure you have the file you want to analyze in this folder: Name the folder with sequencing facility ID and put filtered_feature_bc_matrix in it, the script will fetch the data that it needs
-filenames = c(paste0("LX", 430:441), paste0("LX",500:507))
-raw_reads = list()
-seurat_objects=list()
+filenames = c(paste0("LX", 430:441), paste0("LX",500:507)) #Load the correct file labels
+raw_reads = list() #Prepare raw reads list for for loop
+seurat_objects=list() #Prepare seurat objects list for loop
 
 
 for (i in filenames) {
@@ -47,11 +47,11 @@ for (i in filenames) {
   sample_data = Read10X(file_dir)
   raw_reads[[i]] = sample_data
   seurat_objects[[i]] = CreateSeuratObject(counts = raw_reads[[i]], project = i, min.cells = 3, min.features = 150)
-  rb.genes = rownames(seurat_objects[[i]])[grep("^RP[SL]",rownames(seurat_objects[[i]]))]
+  rb.genes = rownames(seurat_objects[[i]])[grep("^RP[SL]",rownames(seurat_objects[[i]]))] #Find ribosomial genes
   Assay = GetAssayData(seurat_objects[[i]])
-  percent.ribo = colSums(Assay[rb.genes,])/Matrix::colSums(Assay)*100
-  seurat_objects[[i]][["percent.mt"]] = PercentageFeatureSet(seurat_objects[[i]], pattern = "^MT-")
-  seurat_objects[[i]] = AddMetaData(seurat_objects[[i]], percent.ribo, col.name = "percent.ribo")
+  percent.ribo = colSums(Assay[rb.genes,])/Matrix::colSums(Assay)*100 #Calculate ribosomial protein gene content
+  seurat_objects[[i]][["percent.mt"]] = PercentageFeatureSet(seurat_objects[[i]], pattern = "^MT-") #Calculate mithochondrial gene content
+  seurat_objects[[i]] = AddMetaData(seurat_objects[[i]], percent.ribo, col.name = "percent.ribo") #Manually add % of ribosomial protein genes
   }
 rm(sample_data, raw_reads) #Housekeeping
 
@@ -60,7 +60,7 @@ rm(sample_data, raw_reads) #Housekeeping
 #Save QC plots
 pdf("/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/QC.pdf", width=5, height=5)
 for (i in filenames) {
-  #calculation of threshold is performed either by IsOutlier or via expliciting the formula
+  #calculation of threshold is performed either by either IsOutlier() function or via expliciting the formula - results are the same
   min.nFeature.thr = median(seurat_objects[[i]]$nFeature_RNA) - 3*mad(seurat_objects[[i]]$nFeature_RNA)
   max.nFeature.thr = median(seurat_objects[[i]]$nFeature_RNA) + 3*mad(seurat_objects[[i]]$nFeature_RNA)
   max.nCount.thr = median(seurat_objects[[i]]$nCount_RNA) + 3*mad(seurat_objects[[i]]$nCount_RNA)
@@ -106,13 +106,16 @@ rm(seurat_objects)
 ```
 ##Strategies
 ```{r Data Merging -Important in Seurat v5- SCT Normalization, include=FALSE}
+#In Seurat v5 first merge the objects and then integrate them
 seurat_objects=qc_seurat_objects
 seurat_objects_first = seurat_objects[[1]]
 seurat_objects[[1]] = NULL
 seurat_objects =  merge(x = seurat_objects_first, y= c(seurat_objects), merge.data = TRUE, project = "MIMIC") 
+#Perform SCT normalization and then calculate cellcycle scoring, after that, rerun SCT regressing out the cell cycle Phase
 seurat_objects = SCTransform(seurat_objects, vars.to.regress = c("percent.mt", "percent.ribo"), vst.flavor = "v2", assay = "RNA")
 seurat_objects= CellCycleScoring(seurat_objects, s.features = cc.genes.updated.2019$s.genes, g2m.features = cc.genes.updated.2019$g2m.genes, assay = 'SCT')
 seurat_objects = SCTransform(seurat_objects, vars.to.regress = c("percent.mt", "percent.ribo", 'S.Score', 'G2M.Score'), vst.flavor = "v2", assay = "RNA")
+#Perform dimensionality reduction on unintegrated object
 scrna_mimic<-RunPCA (seurat_objects, verbose = FALSE)
 scrna_mimic <- FindNeighbors(object = scrna_mimic, reduction = "pca", dims = 1:30)
 scrna_mimic = RunUMAP(scrna_mimic, reduction = "pca", dims = 1:30, reduction.name = "umap")
@@ -120,7 +123,9 @@ i = seq(0.2, 1, by = 0.2)
 scrna_mimic <- FindClusters(scrna_mimic, resolution = i)
 ```
 ```{r Harmony Integration}
+#Perform integration/batch correction
 scrna_mimic <- IntegrateLayers(object = scrna_mimic, method = HarmonyIntegration, orig.reduction = "pca", normalization.method = "SCT")
+#Perform dimensionality reduction on integrated object
 scrna_mimic <- FindNeighbors(object = scrna_mimic, reduction = "harmony", dims = 1:30)
 scrna_mimic = RunUMAP(scrna_mimic, reduction = "harmony", dims = 1:30, reduction.name = "umap_harmony")
 i = seq(0.2, 1, by = 0.2)
