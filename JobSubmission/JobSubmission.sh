@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --time=48:00:00
-#SBATCH --mem=256GB
+#SBATCH --mem=400GB
 #SBATCH --job-name=Annotation_SingleR
 #SBATCH -o log.out
 #SBATCH -e errlog.out
