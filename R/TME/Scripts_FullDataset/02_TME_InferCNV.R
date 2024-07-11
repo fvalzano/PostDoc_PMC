@@ -1,3 +1,4 @@
+#.libPaths(.libPaths()[3]) #Necessary for JobHopper to find the right library directory
 library(Seurat)
 library(readr)
 library(infercnv)
@@ -18,13 +19,14 @@ infercnv = CreateInfercnvObject(raw_counts_matrix=counts_matrix,
 
 infercnv = infercnv::run(infercnv,
                              cutoff=0.1,
-                             out_dir="/hpc/pmc_kool/fvalzano/Rstudio_Test1/TME/TME_files_March24/InferCNV", 
-                             cluster_by_groups=TRUE, 
+                             out_dir="/hpc/pmc_kool/fvalzano/Rstudio_Test1/TME/TME_files_March24/InferCNV/Output", 
+                             cluster_by_groups=F, 
                              denoise=TRUE,
                              HMM=TRUE,
-                             resume_mode = T)
+                             resume_mode = T,
+                             k_obs_groups = 2)
 
 scrna = infercnv::add_to_seurat(seurat_obj = scrna,
-                                           infercnv_output_path = "/hpc/pmc_kool/fvalzano/Rstudio_Test1/TME/TME_files_March24/InferCNV",
+                                           infercnv_output_path = "/hpc/pmc_kool/fvalzano/Rstudio_Test1/TME/TME_files_March24/InferCNV/Output",
                                            top_n = 15)
 write_rds(scrna, "/hpc/pmc_kool/fvalzano/Rstudio_Test1/TME/TME_files_March24/InferCNV/Seurat_subsets/Post_InferCNV")
