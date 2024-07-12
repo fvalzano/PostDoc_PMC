@@ -35,29 +35,32 @@ library(scater)
 ```
 ```{r MIMIC input files, include=FALSE}
 base_directory = getwd() #Make sure you have the file you want to analyze in this folder: Name the folder with sequencing facility ID and put filtered_feature_bc_matrix in it, the script will fetch the data that it needs
-filenames = c(paste0("LX", 430:441), paste0("LX",500:507))
-raw_reads = list()
-seurat_objects=list()
+filenames = c(paste0("LX", 430:441), paste0("LX",500:507)) #Load the correct file labels
+raw_reads = list() #Prepare raw reads list for for loop
+seurat_objects=list() #Prepare seurat objects list for loop
 
 
 for (i in filenames) {
   # Create the file name for each sample
-  file_dir = paste0(base_directory,"/10x_runs/", i, "/filtered_feature_bc_matrix")
+  file_dir = paste0(base_directory,"/Rstudio_Test1/MIMIC/Data/10x_runs/", i, "/filtered_feature_bc_matrix")
   # Read the sample data from the file using Read10x
   sample_data = Read10X(file_dir)
   raw_reads[[i]] = sample_data
   seurat_objects[[i]] = CreateSeuratObject(counts = raw_reads[[i]], project = i, min.cells = 3, min.features = 150)
-  rb.genes = rownames(seurat_objects[[i]])[grep("^RP[SL]",rownames(seurat_objects[[i]]))]
+  rb.genes = rownames(seurat_objects[[i]])[grep("^RP[SL]",rownames(seurat_objects[[i]]))] #Find ribosomial genes
   Assay = GetAssayData(seurat_objects[[i]])
-  percent.ribo = colSums(Assay[rb.genes,])/Matrix::colSums(Assay)*100
-  seurat_objects[[i]][["percent.mt"]] = PercentageFeatureSet(seurat_objects[[i]], pattern = "^MT-")
-  seurat_objects[[i]] = AddMetaData(seurat_objects[[i]], percent.ribo, col.name = "percent.ribo")
+  percent.ribo = colSums(Assay[rb.genes,])/Matrix::colSums(Assay)*100 #Calculate ribosomial protein gene content
+  seurat_objects[[i]][["percent.mt"]] = PercentageFeatureSet(seurat_objects[[i]], pattern = "^MT-") #Calculate mithochondrial gene content
+  seurat_objects[[i]] = AddMetaData(seurat_objects[[i]], percent.ribo, col.name = "percent.ribo") #Manually add % of ribosomial protein genes
   }
 rm(sample_data, raw_reads) #Housekeeping
 
 ```
 ```{r QC, include=FALSE}
+#Save QC plots
+pdf("/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/QC.pdf", width=5, height=5)
 for (i in filenames) {
+  #calculation of threshold is performed either by either IsOutlier() function or via expliciting the formula - results are the same
   min.nFeature.thr = median(seurat_objects[[i]]$nFeature_RNA) - 3*mad(seurat_objects[[i]]$nFeature_RNA)
   max.nFeature.thr = median(seurat_objects[[i]]$nFeature_RNA) + 3*mad(seurat_objects[[i]]$nFeature_RNA)
   max.nCount.thr = median(seurat_objects[[i]]$nCount_RNA) + 3*mad(seurat_objects[[i]]$nCount_RNA)
@@ -81,11 +84,13 @@ for (i in filenames) {
     ylim(min.nFeature.thr-1,max(QC$nFeature_RNA))
   print(p)
 }
+dev.off()
 rm(p,QC)
+#Apply QC
 qc_seurat_objects <- list()
 for (i in filenames) {
-  seurat_objects[[i]]$nFeature.thr = isOutlier(seurat_objects[[i]]$nFeature_RNA, nmads=3, type="both", log=TRUE)
-   seurat_objects[[i]]$nCount.thr = isOutlier(seurat_objects[[i]]$nCount_RNA, nmads=3, type="higher", log=TRUE)
+  seurat_objects[[i]]$nFeature.thr = isOutlier(seurat_objects[[i]]$nFeature_RNA, nmads=3, type="both", log=FALSE)
+   seurat_objects[[i]]$nCount.thr = isOutlier(seurat_objects[[i]]$nCount_RNA, nmads=3, type="higher", log=FALSE)
    seurat_objects[[i]] <- seurat_objects[[i]][,!(seurat_objects[[i]]$nCount.thr |  seurat_objects[[i]]$nFeature.thr)]
    seurat_objects[[i]] = subset(seurat_objects[[i]], subset = percent.mt <5 &
                                   percent.ribo<5)
@@ -101,81 +106,86 @@ rm(seurat_objects)
 ```
 ##Strategies
 ```{r Data Merging -Important in Seurat v5- SCT Normalization, include=FALSE}
+#In Seurat v5 first merge the objects and then integrate them
 seurat_objects=qc_seurat_objects
 seurat_objects_first = seurat_objects[[1]]
 seurat_objects[[1]] = NULL
 seurat_objects =  merge(x = seurat_objects_first, y= c(seurat_objects), merge.data = TRUE, project = "MIMIC") 
+#Perform SCT normalization and then calculate cellcycle scoring, after that, rerun SCT regressing out the cell cycle Phase
 seurat_objects = SCTransform(seurat_objects, vars.to.regress = c("percent.mt", "percent.ribo"), vst.flavor = "v2", assay = "RNA")
 seurat_objects= CellCycleScoring(seurat_objects, s.features = cc.genes.updated.2019$s.genes, g2m.features = cc.genes.updated.2019$g2m.genes, assay = 'SCT')
 seurat_objects = SCTransform(seurat_objects, vars.to.regress = c("percent.mt", "percent.ribo", 'S.Score', 'G2M.Score'), vst.flavor = "v2", assay = "RNA")
-scrna_mimic_merge<-RunPCA (seurat_objects, verbose = FALSE)
-scrna_mimic_merge <- FindNeighbors(object = scrna_mimic_merge, reduction = "pca", dims = 1:30)
-scrna_mimic_merge = RunUMAP(scrna_mimic_merge, reduction = "pca", dims = 1:30, reduction.name = "umap")
+#Perform dimensionality reduction on unintegrated object
+scrna_mimic<-RunPCA (seurat_objects, verbose = FALSE)
+scrna_mimic <- FindNeighbors(object = scrna_mimic, reduction = "pca", dims = 1:30)
+scrna_mimic = RunUMAP(scrna_mimic, reduction = "pca", dims = 1:30, reduction.name = "umap")
 i = seq(0.2, 1, by = 0.2)
-scrna_mimic_merge <- FindClusters(scrna_mimic_merge, resolution = i)
-DimPlot(scrna_mimic_merge, label = T, group.by = "orig.ident")
+scrna_mimic <- FindClusters(scrna_mimic, resolution = i)
 ```
 ```{r Harmony Integration}
-scrna_mimic<-RunPCA(seurat_objects, verbose = FALSE)
+#Perform integration/batch correction
 scrna_mimic <- IntegrateLayers(object = scrna_mimic, method = HarmonyIntegration, orig.reduction = "pca", normalization.method = "SCT")
+#Perform dimensionality reduction on integrated object
 scrna_mimic <- FindNeighbors(object = scrna_mimic, reduction = "harmony", dims = 1:30)
-scrna_mimic = RunUMAP(scrna_mimic, reduction = "harmony", dims = 1:30, reduction.name = "umap")
+scrna_mimic = RunUMAP(scrna_mimic, reduction = "harmony", dims = 1:30, reduction.name = "umap_harmony")
 i = seq(0.2, 1, by = 0.2)
 scrna_mimic <- FindClusters(scrna_mimic, resolution = i)
 DimPlot(scrna_mimic, group.by = "orig.ident")
-write_rds(scrna_mimic, "All/scrna_mimic_all.rds")
+write_rds(scrna_mimic, "/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/All/scrna_mimic_all.rds")
 ```
-```{r Data Merging -Important in Seurat v5- SCT Normalization + CCA Integration, eval=FALSE, include=FALSE}
-seurat_objects=qc_seurat_objects
-seurat_objects_first = seurat_objects[[1]]
-seurat_objects[[1]] = NULL
-seurat_objects = merge(x = seurat_objects_first, y= c(seurat_objects), merge.data = TRUE, project = "MIMIC") 
-seurat_objects = SCTransform(seurat_objects, vars.to.regress = c("percent.mt", "percent.ribo"), vst.flavor = "v2")
-seurat_objects<-RunPCA (seurat_objects, verbose = FALSE)
-write_rds(seurat_objects, "scrna_SCT_Normalized.rds")
-scrna_mimic <- IntegrateLayers(object = seurat_objects, method = CCAIntegration, orig.reduction = "pca", normalization.method = "SCT")
-scrna_mimic <- FindNeighbors(object = scrna_mimic, reduction = "integrated.dr", dims = 1:30)
-i = seq(0.2, 1, by = 0.2)
-scrna_mimic <- FindClusters(scrna_mimic, resolution = i)
-scrna_mimic = RunUMAP(scrna_mimic, reduction = "integrated.dr", dims = 1:30, reduction.name = "umap")
-#write_rds(scrna_mimic, "scrna_SCT_CCA/scrna.rds")
-```
-```{r Data Merging -Important in Seurat v5- Log Normalization + Harmony Integration, eval=FALSE, include=FALSE}
-seurat_objects=qc_seurat_objects
-seurat_objects_first = seurat_objects[[1]]
-seurat_objects[[1]] = NULL
-seurat_objects = merge(x = seurat_objects_first, y= c(seurat_objects), merge.data = TRUE, project = "MIMIC") 
-seurat_objects = NormalizeData(seurat_objects, normalization.method = "LogNormalize", scale.factor = 10000)
-seurat_objects = FindVariableFeatures(seurat_objects, selection.method = "vst", nfeatures = 2000)
-seurat_objects = ScaleData(seurat_objects, features = rownames(seurat_objects))#, vars.to.regress = c("percent.mt", "percent.ribo"))
-seurat_objects<-RunPCA (seurat_objects, verbose = FALSE)
-scrna_mimic <- IntegrateLayers(object = seurat_objects, method = HarmonyIntegration, orig.reduction = "pca", normalization.method = "LogNormalize")
-scrna_mimic <- FindNeighbors(object = scrna_mimic, reduction = "harmony", dims = 1:30)
-i = seq(0.2, 1, by = 0.2)
-scrna_mimic <- FindClusters(scrna_mimic, resolution = i)
-scrna_mimic = RunUMAP(scrna_mimic, reduction = "harmony", dims = 1:30, reduction.name = "umap")
-#write_rds(scrna_mimic, "scrna_Log_Harmony/scrna.rds")
-DimPlot(scrna_mimic, split.by = "orig.ident")
-```
-```{r Data Merging -Important in Seurat v5- Log Normalization + CCA Integration, eval=FALSE, include=FALSE}
-seurat_objects=qc_seurat_objects
-seurat_objects_first = seurat_objects[[1]]
-seurat_objects[[1]] = NULL
-seurat_objects = merge(x = seurat_objects_first, y= c(seurat_objects), merge.data = TRUE, project = "MIMIC") 
-seurat_objects = NormalizeData(seurat_objects, normalization.method = "LogNormalize", scale.factor = 10000)
-seurat_objects = FindVariableFeatures(seurat_objects, selection.method = "vst", nfeatures = 2000)
-seurat_objects = ScaleData(seurat_objects, features = rownames(seurat_objects), vars.to.regress = c("percent.mt", "percent.ribo"))
-seurat_objects<-RunPCA (seurat_objects, verbose = FALSE)
-scrna_mimic <- IntegrateLayers(object = seurat_objects, method = CCAIntegration, orig.reduction = "pca", normalization.method = "LogNormalize")
-scrna_mimic <- FindNeighbors(object = scrna_mimic, reduction = "integrated.dr", dims = 1:50)
-i = seq(0.2, 1, by = 0.2)
-scrna_mimic <- FindClusters(scrna_mimic, resolution = i)
-scrna_mimic = RunUMAP(scrna_mimic, reduction = "integrated.dr", dims = 1:50, reduction.name = "umap")
-#write_rds(scrna_mimic, "scrna_Log_CCA/scrna.rds")
-DimPlot(scrna_mimic, group.by = "orig.ident")
-```
+#Decided for SCT normalization and Harmony Integration, rest of the strategies are blanked from the main code
+#```{r Data Merging -Important in Seurat v5- SCT Normalization + CCA Integration, eval=FALSE, include=FALSE}
+#seurat_objects=qc_seurat_objects
+#seurat_objects_first = seurat_objects[[1]]
+#seurat_objects[[1]] = NULL
+#seurat_objects = merge(x = seurat_objects_first, y= c(seurat_objects), merge.data = TRUE, project = "MIMIC") 
+#seurat_objects = SCTransform(seurat_objects, vars.to.regress = c("percent.mt", "percent.ribo"), vst.flavor = "v2")
+#seurat_objects<-RunPCA (seurat_objects, verbose = FALSE)
+#scrna_mimic <- IntegrateLayers(object = seurat_objects, method = CCAIntegration, orig.reduction = "pca", normalization.method = "SCT")
+#scrna_mimic <- FindNeighbors(object = scrna_mimic, reduction = "integrated.dr", dims = 1:30)
+#i = seq(0.2, 1, by = 0.2)
+#scrna_mimic <- FindClusters(scrna_mimic, resolution = i)
+#scrna_mimic = RunUMAP(scrna_mimic, reduction = "integrated.dr", dims = 1:30, reduction.name = "umap")
+##write_rds(scrna_mimic, "/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/scrna_SCT_CCA/scrna.rds")
+#```
+#```{r Data Merging -Important in Seurat v5- Log Normalization + Harmony Integration, eval=FALSE, include=FALSE}
+#seurat_objects=qc_seurat_objects
+#seurat_objects_first = seurat_objects[[1]]
+#seurat_objects[[1]] = NULL
+#seurat_objects = merge(x = seurat_objects_first, y= c(seurat_objects), merge.data = TRUE, project = "MIMIC") 
+#seurat_objects = NormalizeData(seurat_objects, normalization.method = "LogNormalize", scale.factor = 10000)
+#seurat_objects = FindVariableFeatures(seurat_objects, selection.method = "vst", nfeatures = 2000)
+#seurat_objects = ScaleData(seurat_objects, features = rownames(seurat_objects))#, vars.to.regress = c("percent.mt", "percent.ribo"))
+#seurat_objects<-RunPCA (seurat_objects, verbose = FALSE)
+#scrna_mimic <- IntegrateLayers(object = seurat_objects, method = HarmonyIntegration, orig.reduction = "pca", normalization.method = "LogNormalize")
+#scrna_mimic <- FindNeighbors(object = scrna_mimic, reduction = "harmony", dims = 1:30)
+#i = seq(0.2, 1, by = 0.2)
+#scrna_mimic <- FindClusters(scrna_mimic, resolution = i)
+#scrna_mimic = RunUMAP(scrna_mimic, reduction = "harmony", dims = 1:30, reduction.name = "umap")
+##write_rds(scrna_mimic, "/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/scrna_Log_Harmony/scrna.rds")
+#DimPlot(scrna_mimic, split.by = "orig.ident")
+#```
+#```{r Data Merging -Important in Seurat v5- Log Normalization + CCA Integration, eval=FALSE, include=FALSE}
+#seurat_objects=qc_seurat_objects
+#seurat_objects_first = seurat_objects[[1]]
+#seurat_objects[[1]] = NULL
+#seurat_objects = merge(x = seurat_objects_first, y= c(seurat_objects), merge.data = TRUE, project = "MIMIC") 
+#seurat_objects = NormalizeData(seurat_objects, normalization.method = "LogNormalize", scale.factor = 10000)
+#seurat_objects = FindVariableFeatures(seurat_objects, selection.method = "vst", nfeatures = 2000)
+#seurat_objects = ScaleData(seurat_objects, features = rownames(seurat_objects), vars.to.regress = c("percent.mt", "percent.ribo"))
+#seurat_objects<-RunPCA (seurat_objects, verbose = FALSE)
+#scrna_mimic <- IntegrateLayers(object = seurat_objects, method = CCAIntegration, orig.reduction = "pca", normalization.method = "LogNormalize")
+#scrna_mimic <- FindNeighbors(object = scrna_mimic, reduction = "integrated.dr", dims = 1:50)
+#i = seq(0.2, 1, by = 0.2)
+#scrna_mimic <- FindClusters(scrna_mimic, resolution = i)
+#scrna_mimic = RunUMAP(scrna_mimic, reduction = "integrated.dr", dims = 1:50, reduction.name = "umap")
+##write_rds(scrna_mimic, "/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/scrna_Log_CCA/scrna.rds")
+#DimPlot(scrna_mimic, group.by = "orig.ident")
+#```
 ##Metadata curation
 ```{r MimicID}
+#Add MimicID from excel sheet Metadata.xlsx
+scrna_mimic = read_rds("/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/All/scrna_mimic_all.rds")
 metadata_sequencing = readxl::read_xlsx("/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Metadata.xlsx", sheet = 1)
 metadata_ID = readxl::read_xlsx("/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Metadata.xlsx", sheet = 2)
 metadata = list()
@@ -197,12 +207,11 @@ for (i in seq_along(filenames)) {
 }
 colnames(orig.ident) = "mimic.id"
 scrna_mimic = AddMetaData(scrna_mimic, metadata = orig.ident, col.name = "mimic.id")
-scrna_mimic_merge = AddMetaData(scrna_mimic_merge, metadata = orig.ident, col.name = "mimic.id")
-DimPlot(scrna_mimic_merge, group.by = "mimic.id", label = T, raster = F)
-DimPlot(scrna_mimic, group.by = "mimic.id", label = T, raster = F)
-
+write_rds(scrna_mimic, "/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/All/scrna_mimic_all.rds")
 ```
 ```{r Cancer type}
+#Add Cancer type from excel sheet Metadata.xlsx
+scrna_mimic = read_rds("/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/All/scrna_mimic_all.rds")
 metadata_ID = readxl::read_xlsx("/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Metadata.xlsx", sheet = 2)
 metadata_ID$`MIMIC ID` = stringr::str_replace(metadata_ID$`MIMIC ID`, pattern = "-", replacement = '')
 mimic.id = stringr::str_replace(metadata_ID$`MIMIC ID`, pattern = "-", replacement = '')
@@ -216,20 +225,27 @@ disease.ident = merge(x = orig.ident,
 rownames(disease.ident) = rownames(orig.ident)
 disease.ident[1:2] = NULL
 scrna_mimic = AddMetaData(scrna_mimic, metadata = disease.ident, col.name = "Cancer.type")
-DimPlot(scrna_mimic, group.by = "Cancer.type")
-
-write_rds(scrna_mimic, "All/scrna_mimic_all.rds")
+write_rds(scrna_mimic, "/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/All/scrna_mimic_all.rds")
 
 ```
-##Trajectory + pseudotime
+##Trajectory + pseudotime - IMPORTANT: Not available in VSC, run on JobHopper
 ```{r Trajectory and Pseudotime by monocle3}
-scrna_mimic = read_rds("All/scrna_mimic_all.rds")
+scrna_mimic = read_rds("/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/All/scrna_mimic_all.rds")
+#convert seurat object in cds object using the specific wrapper
 cds_mimic = as.cell_data_set(scrna_mimic)
 #partitions:
+##IMPORTANT: in order to run monocle3 we have to split the object by partitions, that split the dataset according to the capability of finding a connecting trajectory or not in the dataset
+#Re-cluster the cells
 cds_mimic <- cluster_cells(cds_mimic, resolution=1e-3)
+#Create a new object containing the tumoral cells, corresponding to partition 1, in this case
 scrna_mimic_sub <- subset(as.Seurat(cds_mimic, assay = NULL), monocle3_partitions == 1)
+#subset the original seurat object using the barcodes from the subsetted (by partition) object
 scrna_mimic_sub = subset(scrna_mimic[,colnames(scrna_mimic)%in%colnames(scrna_mimic_sub)])
+#Reconvert the seurat object into cds data
 cds_mimic = as.cell_data_set(scrna_mimic_sub)
+
+#IMPORTANT: At this point you will have a subsetted object with only tumoral cells (according to the division by partition)
+#Transfer annotation from the seurat object onto the cds object
 list_cluster <- scrna_mimic_sub@meta.data[["SCT_snn_res.0.8"]] ###IMPORTANT: Change to cell type when annotation is done
 names(list_cluster) <- scrna_mimic_sub@assays[["SCT"]]@data@Dimnames[[2]]
 cds_mimic@clusters@listData[["UMAP"]][["clusters"]] <- list_cluster
@@ -240,6 +256,7 @@ recreate.partition <- c(rep(1, length(cds_mimic@colData@rownames)))
 names(recreate.partition) <- cds_mimic@colData@rownames
 recreate.partition <- as.factor(recreate.partition)
 cds_mimic@clusters@listData[["UMAP"]][["partitions"]] <- recreate.partition
+#Learn trajectories in the dataset, use learn_graph_control=list(ncenter=1000) to control "branchyness" (https://github.com/cole-trapnell-lab/monocle3/issues/174)
 cds_mimic <- learn_graph(cds_mimic, 
                          use_partition = T, 
                          verbose = T, 
@@ -247,11 +264,12 @@ cds_mimic <- learn_graph(cds_mimic,
                          close_loop = F)
 plot_cells(cds_mimic,
            color_cells_by = "cluster",
-           label_groups_by_cluster=TRUE,group_label_size = 2,
+           label_groups_by_cluster=TRUE,
+           group_label_size = 2,
            label_leaves=FALSE,
            label_branch_points=FALSE) #+ 
   #facet_wrap(~Cancer.type, nrow = 2)
-
+#order cells to calculate pseudotime ordering
 cds_mimic <- order_cells(cds_mimic)
 #save_monocle_objects(cds_mimic, directory_path = "/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/MB/Trajectory/cds_mimic")
 plot_cells(cds_mimic,
@@ -267,31 +285,39 @@ plot_cells(cds_mimic,
 ```
 ##Integration with fetal development dataset
 ```{r Integration Fetal}
+#Create integrated object with kaesmann cerebellar fetal development dataset to highlight shared cell types
 scrna_mimic=read_rds("/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/All/scrna_mimic_all.rds")
 scrna_kaesmann = readRDS(file = "/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum Development/Kaesmann/seurat.rds")
+#Some trouble with data slot of kaesmann dataset, raw counts are placed in the data slot instead of counts slot
 scrna_kaesmann@assays[["RNA"]]@counts = scrna_kaesmann@assays[["RNA"]]@data  
+#Balance the number of cells according to mimic dataset cell number
 scrna_kaesmann_subsampled <- scrna_kaesmann[, sample(colnames(scrna_kaesmann), size =ncol(scrna_mimic), replace=F)]
-
+#Prepare list for for loop
 raw_reads = list()
 seurat_objects=list()
 scrna_matrix = list()
 matrix_list = list()
 Assay = list()
 
+#Split kaesmann dataset by batch(single samples)
 Idents(scrna_kaesmann_subsampled) = "batch"
 for (i in unique(scrna_kaesmann_subsampled$batch)) {
  raw_reads[[i]] = subset(scrna_kaesmann_subsampled, ident = i)
+ #genes in kaesmann dataset are annotated according ENSG instead of Gene Symbol, convert using list of GeneSymbol in metafeatures slot
  genes=raw_reads[[i]]@assays[["RNA"]]@meta.features$feature_name
  metafeatures = raw_reads[[i]]@assays[["RNA"]]@meta.features
  metafeatures$ENSG = rownames(metafeatures)
  scrna_matrix[[i]] = raw_reads[[i]]@assays[["RNA"]]@counts
  rownames(raw_reads[[i]]@assays[["RNA"]]@counts) = ifelse(scrna_matrix[[i]]@Dimnames[[1]] %in%  metafeatures$ENSG, as.character(metafeatures$feature_name), NA)
 }
+#Split mimic dataset by single samples
 Idents(scrna_mimic) = "orig.ident"
 for (i in unique(scrna_mimic$orig.ident)) {
  raw_reads[[i]] = subset(scrna_mimic, ident = i)
 }
+#Create master list of IDs for each single samples in mimic and kaesmann dataset
 IDs = paste0(c(unique(as.character(scrna_kaesmann_subsampled$batch)), c(unique(as.character(scrna_mimic$orig.ident)))))
+#Set up new seurat objects and perform SCTtransformation and integration
 for (i in IDs) {
   matrix_list[[i]]= raw_reads[[i]]@assays$RNA$counts
   seurat_objects[[i]] = CreateSeuratObject(counts = matrix_list[[i]], project = i, min.cells = 3, min.features = 150) 
@@ -315,10 +341,11 @@ i = seq(0.2, 1, by = 0.2)
 scrna_integrated <- FindClusters(scrna_integrated, resolution = i)
 
 Idents(scrna_integrated) = "orig.ident"
+#Convert IDs vector from single samples to transfer annotations from Kaesmann dataset to the new integrated Malignant+fetal dataset
 IDs[stringr::str_detect(IDs, pattern = "SN")] = "Fetal"
-IDs[stringr::str_detect(IDs, pattern = "LX")] = "All"
+IDs[stringr::str_detect(IDs, pattern = "LX")] = "Malignant" 
 meta = as.data.frame(scrna_integrated$orig.ident)
-meta$new.idents = ifelse(stringr::str_detect(meta$`scrna_integrated$orig.ident`, pattern = "SN"), "Fetal", "All")
+meta$new.idents = ifelse(stringr::str_detect(meta$`scrna_integrated$orig.ident`, pattern = "SN"), "Fetal", "Malignant")
 meta$`scrna_integrated$orig.ident` = NULL
 scrna_integrated=AddMetaData(scrna_integrated, metadata = meta, col.name = "new.idents")
 meta = as.data.frame(scrna_kaesmann_subsampled$precisest_label)
@@ -327,28 +354,159 @@ meta = as.data.frame(scrna_kaesmann_subsampled$dev_state)
 scrna_integrated=AddMetaData(scrna_integrated, metadata = meta, col.name = "dev.state")
 write_rds(scrna_integrated, "/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/All/Integration_fetal_all/scrna_integrated.rds")
 ```
+#Annotation
+```{r Annotations integrated dataset}
+#This is a working progress
+scrna_mimic=read_rds("/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/MB/scrna_mimic_mb.rds")
+scrna_kaesmann = readRDS(file = "/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum Development/Kaesmann/seurat.rds")
+scrna_kaesmann@assays[["RNA"]]@counts = scrna_kaesmann@assays[["RNA"]]@data  
+scrna_kaesmann_subsampled <- scrna_kaesmann[, sample(colnames(scrna_kaesmann), size =ncol(scrna_mimic), replace=F)]
+scrna_integrated = read_rds("/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/MB/Integration_fetal_mb/scrna_integrated.rds")
+Idents(scrna_integrated)= "new.idents"
+IDs = paste0(c(unique(as.character(scrna_kaesmann_subsampled$batch)), c(unique(as.character(scrna_mimic$orig.ident)))))
+IDs[stringr::str_detect(IDs, pattern = "SN")] = "Fetal"
+IDs[stringr::str_detect(IDs, pattern = "LX")] = "MB"
+
+scrna_integrated_split = list()
+for (i in unique(IDs)) {
+  scrna_integrated_split[[i]] = subset(scrna_integrated, idents = i)
+  DefaultAssay(scrna_integrated_split[[i]]) = "RNA"
+  scrna_integrated_split[[i]] = JoinLayers(scrna_integrated_split[[i]])
+}
+
+annotations.precisest = SingleR(test=scrna_integrated_split$MB@assays$RNA$counts,
+                             ref=scrna_integrated_split$Fetal@assays$RNA$counts,
+                             labels=scrna_integrated_split$Fetal$precisest.label,
+                             de.method="wilcox", de.n = 10)
+write_rds(annotations.precisest, "/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/MB/Integration_fetal_mb/Annotations/annotations_integrated_fetal_mb.precisest.rds")
+transfer.anno = as.data.frame(annotations.precisest$labels, row.names = rownames(annotations.precisest))
+transfer.anno$`annotations.precisest$labels` = as.factor(transfer.anno$`annotations.precisest$labels`)
+scrna_integrated_split$MB <- AddMetaData(scrna_integrated_split$MB, transfer.anno, col.name = "precisest.label")
+barcodes= as.data.frame(c(colnames(scrna_integrated_split$Fetal), colnames(scrna_integrated_split$MB)))
+metadata = as.data.frame(c(as.character(scrna_integrated_split$Fetal$precisest.label), as.character(scrna_integrated_split$MB$precisest.label)), row.names = barcodes$`c(colnames(scrna_integrated_split$Fetal), colnames(scrna_integrated_split$MB))`)
+scrna_integrated=AddMetaData(scrna_integrated, metadata, "precisest.label")
+#tab <- table(Assigned=annotations.precisest$labels, Cluster=scrna_integrated_split$MB$SCT_snn_res.0.8)
+#pheatmap(log2(tab+10), color=colorRampPalette(c("white", "blue"))(101))
+
+annotations.dev.state = SingleR(test=scrna_integrated_split$MB@assays$RNA$counts,
+                             ref=scrna_integrated_split$Fetal@assays$RNA$counts,
+                             labels=scrna_integrated_split$Fetal$dev.state,
+                             de.method="wilcox", de.n = 10)
+write_rds(annotations.dev.state, "/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/MB/Integration_fetal_mb/Annotations/annotations_integrated_fetal_mb_devstate.rds")
+transfer.anno = as.data.frame(annotations.dev.state$labels, row.names = rownames(annotations.dev.state))
+transfer.anno$`annotations.dev.state$labels` = as.factor(transfer.anno$`annotations.dev.state$labels`)
+scrna_integrated_split$MB <- AddMetaData(scrna_integrated_split$MB, transfer.anno, col.name = "dev.state")
+barcodes= as.data.frame(c(colnames(scrna_integrated_split$Fetal), colnames(scrna_integrated_split$MB)))
+metadata = as.data.frame(c(as.character(scrna_integrated_split$Fetal$dev.state), as.character(scrna_integrated_split$MB$dev.state)), row.names = barcodes$`c(colnames(scrna_integrated_split$Fetal), colnames(scrna_integrated_split$MB))`)
+scrna_integrated=AddMetaData(scrna_integrated, metadata, "dev.state")
+#tab <- table(Assigned=annotations.dev.state$labels, Cluster=scrna_integrated_split$MB$SCT_snn_res.0.8)
+#pheatmap(log2(tab+10), color=colorRampPalette(c("white", "blue"))(101))
+cancertype = as.data.frame(scrna_mimic$Cancer.type)
+scrna_integrated = AddMetaData(scrna_integrated, cancertype, "cancer.type")
+scrna_integrated$cancer.type = replace_na(scrna_integrated$cancer.type, "Fetal")
+write_rds(scrna_integrated, "/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/MB/Integration_fetal_mb/scrna_integrated.rds")
+
+
+Meta = read.csv2("/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/MB/Integration_fetal_mb/Annotations/Annotations_kaesmann.csv", sep = ",")
+Meta$Gene_name = toupper(Meta$Gene_name)
+Meta_hu_celltype = list()
+for (i in unique(Meta$Cell.state)) {
+  Meta_hu_celltype[[i]] = Meta[Meta$Cell.state == i,]
+}
+for (i in unique(Meta$Cell.state)) {
+  scrna_integrated = AddModuleScore(scrna_integrated, list(Meta_hu_celltype[[i]]$Gene_name), name = paste0(i, "_score"))
+}
+for (i in unique(Meta$Cell.state)) {
+  p = FeaturePlot(scrna_integrated, features = paste0(i, "_score1"), order=T, split.by = "new.idents")
+  print(p)
+}
+
+
+Idents(scrna_integrated) = "SCT_snn_res.1"
+scrna_integrated= PrepSCTFindMarkers(scrna_integrated)
+DEG = FindAllMarkers(scrna_integrated, only.pos = T, min.diff.pct = 0.1)
+DEG = DEG[DEG$p_val_adj<0.05,]
+Idents(scrna_integrated) = "SCT_snn_res.1"
+scrna_integrated = RenameIdents(scrna_integrated, c("0" = "GC/UBC",
+                                                    "1" = "Purkinje",
+                                                    "2" = "Progenitor_1",
+                                                    "3" = "GC_diff_1",
+                                                    "4" = "4",
+                                                    "5" = "Progenitor_2",
+                                                    "6" = "GC_diff_2",
+                                                    "7" = "7",
+                                                    "8" = "UBC",
+                                                    "9" = "GC_diff_3",
+                                                    "10" = "10",
+                                                    "11" = "UBC",
+                                                    "12" = "Immune",
+                                                    "13" = "VZ_Neuroblast",
+                                                    "14" = "GC_1",
+                                                    "15" = "GC_diff_4",
+                                                    "16" = "GC_diff_5",
+                                                    "17" = "VZ_Neuroblast",
+                                                    "18" = "GC_diff_6",
+                                                    "19" = "Glut_DN",
+                                                    "20" = "GC_diff_7",
+                                                    "21" = "GABA_DN",
+                                                    "22" = "22",
+                                                    "23" = "EC_1",
+                                                    "24" = "Oligodendrocyte",
+                                                    "25" = "GC_2",
+                                                    "26" = "Meningeal",
+                                                    "27" = "GC_3",
+                                                    "28" = "28",
+                                                    "29" = "Oligodendrocyte",
+                                                    "30" = "Interneuron_diff",
+                                                    "31" = "Progenitor_2",
+                                                    "32" = "Interneuron",
+                                                    "33" = "33",
+                                                    "34" = "EC_2",
+                                                    "35" = "UBC",
+                                                    "36" = "Progenitor_oligo",
+                                                    "37" = "Bergmann",
+                                                    "38" = "38", #Schwann Cells? 
+                                                    "39" = "GABA_DN",
+                                                    "40" = "Interneuron",
+                                                    "41" = "41", #Podocytes?
+                                                    "42" = "Astrocyte",
+                                                    "43" = "GC_4"))
+
+scrna_integrated$anno_stage1 = scrna_integrated@active.ident
+write_rds(scrna_integrated, "/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/MB/Integration_fetal_mb/scrna_integrated.rds")
+```
+
+
+
+
+##Copy Number Variation - IMPORTANT: Not available in VSC, run on JobHopper
 ```{r InferCNV_xCelltype}
 scrna_integrated = read_rds("/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/All/Integration_fetal_all/scrna_integrated.rds")
-Idents(scrna_integrated) = "anno_stage1"
+Idents(scrna_integrated) = "" #Annotation slot, work in progress
+#set up elements for InferCNV analysis
 counts_matrix = GetAssayData(scrna_integrated, layer="counts")
+#Split object in Fetal and Malignant dataset 
 scrna_integrated_split = SplitObject(scrna_integrated, split.by = "new.idents")
+#Create metadata slot containing the name of the cluster + "_Fetal" or "_Malignant"
 scrna_integrated_split$Fetal$anno_infercnv = as.factor(paste0(Idents(scrna_integrated_split$Fetal), "_Fetal"))
-DimPlot(scrna_integrated_split$Fetal, group.by = "anno_infercnv")
-scrna_integrated_split$MB$anno_infercnv = as.factor(paste0(Idents(scrna_integrated_split$MB), "_All"))
-DimPlot(scrna_integrated_split$MB, group.by = "anno_infercnv")
+scrna_integrated_split$MB$anno_infercnv = as.factor(paste0(Idents(scrna_integrated_split$MB), "_Malignant"))
+#Extract the barcodes for both the Fetal and Malignant datasets and then join them in one
 barcodes = list()
 for (i in seq_along(scrna_integrated_split)) {
   barcodes[[i]]= as.data.frame(scrna_integrated_split[[i]]$anno_infercnv)
   colnames(barcodes[[i]]) = "cell.type"
 }
 barcodes = Join(data.list = barcodes, by = "cell.type")
+#Extract the annotations for both the Fetal and Malignant datasets and then join them in one
 annotation = list()
 for (i in seq_along(scrna_integrated_split)) {
   annotation[[i]] = as.data.frame(scrna_integrated_split[[i]]$anno_infercnv)
   colnames(annotation[[i]]) = "cell.type"
 }
 annotation = Join(data.list = annotation, by = "cell.type")
+#IMPORTANT: after joining the annotation lists convert them into matrix, otherwise ERROR
 annotation = as.matrix(annotation)
+#Create infercnv object using as reference the Fetal counterpart of each cluster
 infercnv_mimic = CreateInfercnvObject(raw_counts_matrix=counts_matrix,
                                     annotations_file=annotation,
                                     delim="\t",
@@ -356,7 +514,7 @@ infercnv_mimic = CreateInfercnvObject(raw_counts_matrix=counts_matrix,
                                     ref_group_names=unique(as.character(scrna_integrated_split$Fetal$anno_infercnv)))
 
 infercnv_mimic = infercnv::run(infercnv_mimic,
-                             cutoff=0.1,
+                             cutoff=0.1, #Specified for 10X genomics
                              out_dir="/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/All/infercnv/CNV_output_xCelltype", 
                              cluster_by_groups=TRUE, 
                              denoise=TRUE,
@@ -386,6 +544,7 @@ for (i in seq_along(scrna_integrated_split)) {
 }
 annotation = Join(data.list = annotation, by = "cancer.type")
 annotation = as.matrix(annotation)
+#Create infercnv object using as reference the Fetal counterpart of the whole dataset
 infercnv_mimic = CreateInfercnvObject(raw_counts_matrix=counts_matrix,
                                     annotations_file=annotation,
                                     delim="\t",
@@ -393,7 +552,7 @@ infercnv_mimic = CreateInfercnvObject(raw_counts_matrix=counts_matrix,
                                     ref_group_names="Fetal")
 
 infercnv_mimic = infercnv::run(infercnv_mimic,
-                             cutoff=0.1,
+                             cutoff=0.1, #Specified for 10X genomics
                              out_dir="/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/MB/infercnv/CNV_output_xCancertype", 
                              cluster_by_groups=TRUE, 
                              denoise=TRUE,
@@ -437,9 +596,9 @@ library(futile.logger)
 ```
 ```{r MIMIC input files, include=FALSE}
 base_directory = getwd() #Make sure you have the file you want to analyze in this folder: Name the folder with sequencing facility ID and put filtered_feature_bc_matrix in it, the script will fetch the data that it needs
-filenames = c(paste0("LX", 430:432), paste0("LX", 434:436), paste0("LX", 438), paste0("LX", 440:441), paste0("LX", 500:504),paste0("LX", 507))
-raw_reads = list()
-seurat_objects=list()
+filenames = c(paste0("LX", 430:432), paste0("LX", 434:436), paste0("LX", 438), paste0("LX", 440:441), paste0("LX", 500:504),paste0("LX", 507)) #Load the correct file labels
+raw_reads = list() #Prepare raw reads list for for loop
+seurat_objects=list() #Prepare seurat objects list for loop
 
 
 for (i in filenames) {
@@ -451,9 +610,9 @@ for (i in filenames) {
   seurat_objects[[i]] = CreateSeuratObject(counts = raw_reads[[i]], project = i, min.cells = 3, min.features = 150)
   rb.genes = rownames(seurat_objects[[i]])[grep("^RP[SL]",rownames(seurat_objects[[i]]))]
   Assay = GetAssayData(seurat_objects[[i]])
-  percent.ribo = colSums(Assay[rb.genes,])/Matrix::colSums(Assay)*100
-  seurat_objects[[i]][["percent.mt"]] = PercentageFeatureSet(seurat_objects[[i]], pattern = "^MT-")
-  seurat_objects[[i]] = AddMetaData(seurat_objects[[i]], percent.ribo, col.name = "percent.ribo")
+  percent.ribo = colSums(Assay[rb.genes,])/Matrix::colSums(Assay)*100#Calculate ribosomial protein gene content
+  seurat_objects[[i]][["percent.mt"]] = PercentageFeatureSet(seurat_objects[[i]], pattern = "^MT-") #Calculate mithochondrial gene content
+  seurat_objects[[i]] = AddMetaData(seurat_objects[[i]], percent.ribo, col.name = "percent.ribo")#Manually add % of ribosomial protein genes
   }
 rm(sample_data, raw_reads) #Housekeeping
 
@@ -501,81 +660,88 @@ rm(seurat_objects)
 ```
 ##Strategies_MB
 ```{r Data Merging -Important in Seurat v5- SCT Normalization, include=FALSE}
+#In Seurat v5 first merge the objects and then integrate them
 seurat_objects=qc_seurat_objects
 seurat_objects_first = seurat_objects[[1]]
 seurat_objects[[1]] = NULL
 seurat_objects =  merge(x = seurat_objects_first, y= c(seurat_objects), merge.data = TRUE, project = "MIMIC") 
+#Perform SCT normalization and then calculate cellcycle scoring, after that, rerun SCT regressing out the cell cycle Phase
 seurat_objects = SCTransform(seurat_objects, vars.to.regress = c("percent.mt", "percent.ribo"), vst.flavor = "v2", assay = "RNA")
 seurat_objects= CellCycleScoring(seurat_objects, s.features = cc.genes.updated.2019$s.genes, g2m.features = cc.genes.updated.2019$g2m.genes, assay = 'SCT')
 seurat_objects = SCTransform(seurat_objects, vars.to.regress = c("percent.mt", "percent.ribo", 'S.Score', 'G2M.Score'), vst.flavor = "v2", assay = "RNA")
+#Perform dimensionality reduction on unintegrated object
 scrna_mimic_merge<-RunPCA (seurat_objects, verbose = FALSE)
 scrna_mimic_merge <- FindNeighbors(object = scrna_mimic_merge, reduction = "pca", dims = 1:30)
 scrna_mimic_merge = RunUMAP(scrna_mimic_merge, reduction = "pca", dims = 1:30, reduction.name = "umap")
 i = seq(0.2, 1, by = 0.2)
 scrna_mimic_merge <- FindClusters(scrna_mimic_merge, resolution = i)
-DimPlot(scrna_mimic_merge, label = T, group.by = "orig.ident")
 ```
 ```{r Harmony Integration}
+#Perform integration/batch correction
 scrna_mimic<-RunPCA (seurat_objects, verbose = FALSE)
+#Perform dimensionality reduction on integrated object
 scrna_mimic <- IntegrateLayers(object = scrna_mimic, method = HarmonyIntegration, orig.reduction = "pca", normalization.method = "SCT")
 scrna_mimic <- FindNeighbors(object = scrna_mimic, reduction = "harmony", dims = 1:30)
 scrna_mimic = RunUMAP(scrna_mimic, reduction = "harmony", dims = 1:30, reduction.name = "umap")
 i = seq(0.2, 1, by = 0.2)
 scrna_mimic <- FindClusters(scrna_mimic, resolution = i)
-DimPlot(scrna_mimic, group.by = "orig.ident")
+write_rds(scrna_mimic, "/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/MB/scrna_mimic_mb.rds")
 ```
 
-```{r Data Merging -Important in Seurat v5- SCT Normalization + CCA Integration, eval=FALSE, include=FALSE}
-seurat_objects=qc_seurat_objects
-seurat_objects_first = seurat_objects[[1]]
-seurat_objects[[1]] = NULL
-seurat_objects = merge(x = seurat_objects_first, y= c(seurat_objects), merge.data = TRUE, project = "MIMIC") 
-seurat_objects = SCTransform(seurat_objects, vars.to.regress = c("percent.mt", "percent.ribo"), vst.flavor = "v2")
-seurat_objects<-RunPCA (seurat_objects, verbose = FALSE)
-write_rds(seurat_objects, "scrna_SCT_Normalized.rds")
-scrna_mimic <- IntegrateLayers(object = seurat_objects, method = CCAIntegration, orig.reduction = "pca", normalization.method = "SCT")
-scrna_mimic <- FindNeighbors(object = scrna_mimic, reduction = "integrated.dr", dims = 1:30)
-i = seq(0.2, 1, by = 0.2)
-scrna_mimic <- FindClusters(scrna_mimic, resolution = i)
-scrna_mimic = RunUMAP(scrna_mimic, reduction = "integrated.dr", dims = 1:30, reduction.name = "umap")
+#```{r Data Merging -Important in Seurat v5- SCT Normalization + CCA Integration, eval=FALSE, include=FALSE}
+#seurat_objects=qc_seurat_objects
+#seurat_objects_first = seurat_objects[[1]]
+#seurat_objects[[1]] = NULL
+#seurat_objects = merge(x = seurat_objects_first, y= c(seurat_objects), merge.data = TRUE, project = "MIMIC") 
+#seurat_objects = SCTransform(seurat_objects, vars.to.regress = c("percent.mt", "percent.ribo"), vst.flavor = "v2")
+#seurat_objects<-RunPCA (seurat_objects, verbose = FALSE)
+#write_rds(seurat_objects, "scrna_SCT_Normalized.rds")
+#scrna_mimic <- IntegrateLayers(object = seurat_objects, method = CCAIntegration, orig.reduction = "pca", normalization.method = "SCT")
+#scrna_mimic <- FindNeighbors(object = scrna_mimic, reduction = "integrated.dr", dims = 1:30)
+#i = seq(0.2, 1, by = 0.2)
+#scrna_mimic <- FindClusters(scrna_mimic, resolution = i)
+#scrna_mimic = RunUMAP(scrna_mimic, reduction = "integrated.dr", dims = 1:30, reduction.name = "umap")
 #write_rds(scrna_mimic, "scrna_SCT_CCA/scrna.rds")
-```
-```{r Data Merging -Important in Seurat v5- Log Normalization + Harmony Integration, eval=FALSE, include=FALSE}
-seurat_objects=qc_seurat_objects
-seurat_objects_first = seurat_objects[[1]]
-seurat_objects[[1]] = NULL
-seurat_objects = merge(x = seurat_objects_first, y= c(seurat_objects), merge.data = TRUE, project = "MIMIC") 
-seurat_objects = NormalizeData(seurat_objects, normalization.method = "LogNormalize", scale.factor = 10000)
-seurat_objects = FindVariableFeatures(seurat_objects, selection.method = "vst", nfeatures = 2000)
-seurat_objects = ScaleData(seurat_objects, features = rownames(seurat_objects))#, vars.to.regress = c("percent.mt", "percent.ribo"))
-seurat_objects<-RunPCA (seurat_objects, verbose = FALSE)
-scrna_mimic <- IntegrateLayers(object = seurat_objects, method = HarmonyIntegration, orig.reduction = "pca", normalization.method = "LogNormalize")
-scrna_mimic <- FindNeighbors(object = scrna_mimic, reduction = "harmony", dims = 1:30)
-i = seq(0.2, 1, by = 0.2)
-scrna_mimic <- FindClusters(scrna_mimic, resolution = i)
-scrna_mimic = RunUMAP(scrna_mimic, reduction = "harmony", dims = 1:30, reduction.name = "umap")
+#```
+#```{r Data Merging -Important in Seurat v5- Log Normalization + Harmony Integration, eval=FALSE, include=FALSE}
+#seurat_objects=qc_seurat_objects
+#seurat_objects_first = seurat_objects[[1]]
+#seurat_objects[[1]] = NULL
+#seurat_objects = merge(x = seurat_objects_first, y= c(seurat_objects), merge.data = TRUE, project = "MIMIC") 
+#seurat_objects = NormalizeData(seurat_objects, normalization.method = "LogNormalize", scale.factor = 10000)
+#seurat_objects = FindVariableFeatures(seurat_objects, selection.method = "vst", nfeatures = 2000)
+#seurat_objects = ScaleData(seurat_objects, features = rownames(seurat_objects))#, vars.to.regress = c("percent.mt", "percent.ribo"))
+#seurat_objects<-RunPCA (seurat_objects, verbose = FALSE)
+#scrna_mimic <- IntegrateLayers(object = seurat_objects, method = HarmonyIntegration, orig.reduction = "pca", normalization.method = "LogNormalize")
+#scrna_mimic <- FindNeighbors(object = scrna_mimic, reduction = "harmony", dims = 1:30)
+#i = seq(0.2, 1, by = 0.2)
+#scrna_mimic <- FindClusters(scrna_mimic, resolution = i)
+#scrna_mimic = RunUMAP(scrna_mimic, reduction = "harmony", dims = 1:30, reduction.name = "umap")
 #write_rds(scrna_mimic, "scrna_Log_Harmony/scrna.rds")
-DimPlot(scrna_mimic, split.by = "orig.ident")
-```
-```{r Data Merging -Important in Seurat v5- Log Normalization + CCA Integration, eval=FALSE, include=FALSE}
-seurat_objects=qc_seurat_objects
-seurat_objects_first = seurat_objects[[1]]
-seurat_objects[[1]] = NULL
-seurat_objects = merge(x = seurat_objects_first, y= c(seurat_objects), merge.data = TRUE, project = "MIMIC") 
-seurat_objects = NormalizeData(seurat_objects, normalization.method = "LogNormalize", scale.factor = 10000)
-seurat_objects = FindVariableFeatures(seurat_objects, selection.method = "vst", nfeatures = 2000)
-seurat_objects = ScaleData(seurat_objects, features = rownames(seurat_objects), vars.to.regress = c("percent.mt", "percent.ribo"))
-seurat_objects<-RunPCA (seurat_objects, verbose = FALSE)
-scrna_mimic <- IntegrateLayers(object = seurat_objects, method = CCAIntegration, orig.reduction = "pca", normalization.method = "LogNormalize")
-scrna_mimic <- FindNeighbors(object = scrna_mimic, reduction = "integrated.dr", dims = 1:50)
-i = seq(0.2, 1, by = 0.2)
-scrna_mimic <- FindClusters(scrna_mimic, resolution = i)
-scrna_mimic = RunUMAP(scrna_mimic, reduction = "integrated.dr", dims = 1:50, reduction.name = "umap")
+#DimPlot(scrna_mimic, split.by = "orig.ident")
+#```
+#```{r Data Merging -Important in Seurat v5- Log Normalization + CCA Integration, eval=FALSE, include=FALSE}
+#seurat_objects=qc_seurat_objects
+#seurat_objects_first = seurat_objects[[1]]
+#seurat_objects[[1]] = NULL
+#seurat_objects = merge(x = seurat_objects_first, y= c(seurat_objects), merge.data = TRUE, project = "MIMIC") 
+#seurat_objects = NormalizeData(seurat_objects, normalization.method = "LogNormalize", scale.factor = 10000)
+#seurat_objects = FindVariableFeatures(seurat_objects, selection.method = "vst", nfeatures = 2000)
+#seurat_objects = ScaleData(seurat_objects, features = rownames(seurat_objects), vars.to.regress = c("percent.mt", "percent.ribo"))
+#seurat_objects<-RunPCA (seurat_objects, verbose = FALSE)
+#scrna_mimic <- IntegrateLayers(object = seurat_objects, method = CCAIntegration, orig.reduction = "pca", normalization.method = "LogNormalize")
+#scrna_mimic <- FindNeighbors(object = scrna_mimic, reduction = "integrated.dr", dims = 1:50)
+#i = seq(0.2, 1, by = 0.2)
+#scrna_mimic <- FindClusters(scrna_mimic, resolution = i)
+#scrna_mimic = RunUMAP(scrna_mimic, reduction = "integrated.dr", dims = 1:50, reduction.name = "umap")
 #write_rds(scrna_mimic, "scrna_Log_CCA/scrna.rds")
-DimPlot(scrna_mimic, group.by = "orig.ident")
-```
+#DimPlot(scrna_mimic, group.by = "orig.ident")
+#```
+
 ##Metadata curation_MB
 ```{r MimicID}
+#Add MimicID from excel sheet Metadata.xlsx
+scrna_mimic = read_rds("/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/MB/scrna_mimic_mb.rds")
 metadata_sequencing = readxl::read_xlsx("/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Metadata.xlsx", sheet = 1)
 metadata_ID = readxl::read_xlsx("/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Metadata.xlsx", sheet = 2)
 metadata = list()
@@ -597,12 +763,11 @@ for (i in seq_along(filenames)) {
 }
 colnames(orig.ident) = "mimic.id"
 scrna_mimic = AddMetaData(scrna_mimic, metadata = orig.ident, col.name = "mimic.id")
-scrna_mimic_merge = AddMetaData(scrna_mimic_merge, metadata = orig.ident, col.name = "mimic.id")
-DimPlot(scrna_mimic_merge, group.by = "mimic.id", label = T, raster = F)
-DimPlot(scrna_mimic, group.by = "mimic.id", label = T, raster = F)
+write_rds(scrna_mimic, "/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/MB/scrna_mimic_mb.rds")
 
 ```
 ```{r Cancer type}
+#Add Cancer type from excel sheet Metadata.xlsx
 metadata_ID = readxl::read_xlsx("/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Metadata.xlsx", sheet = 2)
 metadata_ID$`MIMIC ID` = stringr::str_replace(metadata_ID$`MIMIC ID`, pattern = "-", replacement = '')
 mimic.id = stringr::str_replace(metadata_ID$`MIMIC ID`, pattern = "-", replacement = '')
@@ -616,14 +781,11 @@ disease.ident = merge(x = orig.ident,
 rownames(disease.ident) = rownames(orig.ident)
 disease.ident[1:2] = NULL
 scrna_mimic = AddMetaData(scrna_mimic, metadata = disease.ident, col.name = "Cancer.type")
-DimPlot(scrna_mimic, group.by = "Cancer.type")
-
-write_rds(scrna_mimic, "MB/scrna_mimic_mb.rds")
-
+write_rds(scrna_mimic, "/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/MB/scrna_mimic_mb.rds")
 ```
 ```{r Cell-type annotation through SingleR}
-scrna_mimic = read_rds("MB/scrna_mimic_mb.rds")
-scrna_kaesmann = readRDS(file = "~/Cerebellum Development/Kaesmann/seurat.rds")
+scrna_mimic = read_rds("/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/MB/scrna_mimic_mb.rds")
+scrna_kaesmann = readRDS(file = "/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum Development/Kaesmann/seurat.rds")
 scrna_kaesmann@assays[["RNA"]]@counts = scrna_kaesmann@assays[["RNA"]]@data  
 scrna_kaesmann_subsampled <- scrna_kaesmann[, sample(colnames(scrna_kaesmann), size =ncol(scrna_mimic), replace=F)]
 genes=scrna_kaesmann_subsampled@assays[["RNA"]]@meta.features$feature_name
@@ -634,6 +796,7 @@ rownames(scrna_kaesmann_subsampled@assays[["RNA"]]@counts) = ifelse(scrna_matrix
 filenames.counts = paste0("counts.", filenames)
 DefaultAssay(scrna_mimic) = "RNA"
 scrna_mimic = JoinLayers(scrna_mimic)
+#Use kaesmann precisest label metadata slot (highest granularity) as a reference for autoannotation
 annotations = SingleR(test=scrna_mimic@assays$RNA$counts,
                              ref=scrna_kaesmann_subsampled@assays$RNA$counts, labels=scrna_kaesmann_subsampled$precisest_label,
                              de.method="wilcox", de.n = 10)
@@ -642,8 +805,8 @@ transfer.anno = as.data.frame(annotations$labels, row.names = rownames(annotatio
 transfer.anno$`annotations$labels` = as.factor(transfer.anno$`annotations$labels`)
 scrna_mimic <- AddMetaData(scrna_mimic, transfer.anno, col.name = "precisestlabel")
 DimPlot(scrna_mimic, reduction="umap", group.by = "precisestlabel", label = T) 
-write_rds(scrna_mimic, "MB/scrna_mimic_mb.rds")
-write_rds(annotations, "MB/Annotations/annotations_analysis_fromSingleR.rds")
+write_rds(scrna_mimic, "/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/MB/scrna_mimic_mb.rds")
+write_rds(annotations, "/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/MB/Annotations/annotations_analysis_fromSingleR.rds")
 Idents(scrna_mimic) = "precisestlabel"
 for (i in unique(Idents(scrna_mimic))) {
   scrna_mimic = AddMetaData(scrna_mimic, metadata = annotations$scores[,i], col.name = i)
@@ -652,6 +815,7 @@ for (i in unique(Idents(scrna_mimic))) {
 
 ```
 ```{r Doublet, eval=FALSE, include=FALSE}
+#This is a work in progress
 remove.packages("Matrix")
 packageurl <- "https://cran.r-project.org/src/contrib/Archive/Matrix/Matrix_1.3-2.tar.gz"
 install.packages(packageurl, repos=NULL, type="source")
@@ -677,13 +841,22 @@ DimPlot(scrna_mimic, split.by = "doublets")
 ```
 ##Trajectory + pseudotime_MB
 ```{r Trajectory and Pseudotime by monocle3}
-scrna_mimic = read_rds("MB/scrna_mimic_mb.rds")
+scrna_mimic = read_rds("/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/MB/scrna_mimic_mb.rds")
+#convert seurat object in cds object using the specific wrapper
 cds_mimic = as.cell_data_set(scrna_mimic)
 #partitions:
+##IMPORTANT: in order to run monocle3 we have to split the object by partitions, that split the dataset according to the capability of finding a connecting trajectory or not in the dataset
+#Re-cluster the cells
 cds_mimic <- cluster_cells(cds_mimic, resolution=1e-3)
+#Create a new object containing the tumoral cells, corresponding to partition 1, in this case
 scrna_mimic_sub <- subset(as.Seurat(cds_mimic, assay = NULL), monocle3_partitions == 1)
+#subset the original seurat object using the barcodes from the subsetted (by partition) object
 scrna_mimic_sub = subset(scrna_mimic[,colnames(scrna_mimic)%in%colnames(scrna_mimic_sub)])
+#Reconvert the seurat object into cds data
 cds_mimic = as.cell_data_set(scrna_mimic_sub)
+
+#IMPORTANT: At this point you will have a subsetted object with only tumoral cells (according to the division by partition)
+#Transfer annotation from the seurat object onto the cds object
 list_cluster <- scrna_mimic_sub@meta.data[["SCT_snn_res.0.8"]] ###IMPORTANT: Change to cell type when annotation is done
 names(list_cluster) <- scrna_mimic_sub@assays[["SCT"]]@data@Dimnames[[2]]
 cds_mimic@clusters@listData[["UMAP"]][["clusters"]] <- list_cluster
@@ -694,6 +867,7 @@ recreate.partition <- c(rep(1, length(cds_mimic@colData@rownames)))
 names(recreate.partition) <- cds_mimic@colData@rownames
 recreate.partition <- as.factor(recreate.partition)
 cds_mimic@clusters@listData[["UMAP"]][["partitions"]] <- recreate.partition
+#Learn trajectories in the dataset, use learn_graph_control=list(ncenter=1000) to control "branchyness" (https://github.com/cole-trapnell-lab/monocle3/issues/174)
 cds_mimic <- learn_graph(cds_mimic, 
                          use_partition = T, 
                          verbose = T, 
@@ -705,7 +879,7 @@ plot_cells(cds_mimic,
            label_leaves=FALSE,
            label_branch_points=FALSE) #+ 
   #facet_wrap(~Cancer.type, nrow = 2)
-
+#order cells to calculate pseudotime ordering
 cds_mimic <- order_cells(cds_mimic)
 #save_monocle_objects(cds_mimic, directory_path = "/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/MB/Trajectory/cds_mimic")
 plot_cells(cds_mimic,
@@ -721,31 +895,41 @@ plot_cells(cds_mimic,
 ```
 ##Integration with fetal development dataset_MB
 ```{r Integration Fetal and Medulloblastoma}
+#Create integrated object with kaesmann cerebellar fetal development dataset to highlight shared cell types
 scrna_mimic=read_rds("/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/MB/scrna_mimic_mb.rds")
 scrna_kaesmann = readRDS(file = "/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum Development/Kaesmann/seurat.rds")
+#Some trouble with data slot of kaesmann dataset, raw counts are placed in the data slot instead of counts slot
 scrna_kaesmann@assays[["RNA"]]@counts = scrna_kaesmann@assays[["RNA"]]@data  
+#Balance the number of cells according to mimic dataset cell number
 scrna_kaesmann_subsampled <- scrna_kaesmann[, sample(colnames(scrna_kaesmann), size =ncol(scrna_mimic), replace=F)]
 
+#Prepare list for for loop
 raw_reads = list()
 seurat_objects=list()
 scrna_matrix = list()
 matrix_list = list()
 Assay = list()
 
+#Split kaesmann dataset by batch(single samples)
 Idents(scrna_kaesmann_subsampled) = "batch"
 for (i in unique(scrna_kaesmann_subsampled$batch)) {
  raw_reads[[i]] = subset(scrna_kaesmann_subsampled, ident = i)
+ #genes in kaesmann dataset are annotated according ENSG instead of Gene Symbol, convert using list of GeneSymbol in metafeatures slot
  genes=raw_reads[[i]]@assays[["RNA"]]@meta.features$feature_name
  metafeatures = raw_reads[[i]]@assays[["RNA"]]@meta.features
  metafeatures$ENSG = rownames(metafeatures)
  scrna_matrix[[i]] = raw_reads[[i]]@assays[["RNA"]]@counts
  rownames(raw_reads[[i]]@assays[["RNA"]]@counts) = ifelse(scrna_matrix[[i]]@Dimnames[[1]] %in%  metafeatures$ENSG, as.character(metafeatures$feature_name), NA)
 }
+#Split mimic dataset by single samples
 Idents(scrna_mimic) = "orig.ident"
 for (i in unique(scrna_mimic$orig.ident)) {
  raw_reads[[i]] = subset(scrna_mimic, ident = i)
 }
+#Create master list of IDs for each single samples in mimic and kaesmann dataset
 IDs = paste0(c(unique(as.character(scrna_kaesmann_subsampled$batch)), c(unique(as.character(scrna_mimic$orig.ident)))))
+
+#Set up new seurat objects and perform SCTtransformation and integration
 for (i in IDs) {
   matrix_list[[i]]= raw_reads[[i]]@assays$RNA$counts
   seurat_objects[[i]] = CreateSeuratObject(counts = matrix_list[[i]], project = i, min.cells = 3, min.features = 150) 
@@ -769,6 +953,7 @@ i = seq(0.2, 1, by = 0.2)
 scrna_integrated <- FindClusters(scrna_integrated, resolution = i)
 
 Idents(scrna_integrated) = "orig.ident"
+#Convert IDs vector from single samples to transfer annotations from Kaesmann dataset to the new integrated MB+fetal dataset
 IDs[stringr::str_detect(IDs, pattern = "SN")] = "Fetal"
 IDs[stringr::str_detect(IDs, pattern = "LX")] = "MB"
 meta = as.data.frame(scrna_integrated$orig.ident)
@@ -1314,128 +1499,5 @@ scrna_integrated = infercnv::add_to_seurat(seurat_obj = scrna_integrated,
 write_rds(infercnv_integrated, "/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/EP/infercnv/CNV_output_xCancertype/scrna_integrated_infercnv.rds")
 
 ```
-
-
-#Annotation
-```{r Annotations integrated dataset}
-scrna_mimic=read_rds("/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/MB/scrna_mimic_mb.rds")
-scrna_kaesmann = readRDS(file = "/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum Development/Kaesmann/seurat.rds")
-scrna_kaesmann@assays[["RNA"]]@counts = scrna_kaesmann@assays[["RNA"]]@data  
-scrna_kaesmann_subsampled <- scrna_kaesmann[, sample(colnames(scrna_kaesmann), size =ncol(scrna_mimic), replace=F)]
-scrna_integrated = read_rds("/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/MB/Integration_fetal_mb/scrna_integrated.rds")
-Idents(scrna_integrated)= "new.idents"
-IDs = paste0(c(unique(as.character(scrna_kaesmann_subsampled$batch)), c(unique(as.character(scrna_mimic$orig.ident)))))
-IDs[stringr::str_detect(IDs, pattern = "SN")] = "Fetal"
-IDs[stringr::str_detect(IDs, pattern = "LX")] = "MB"
-
-scrna_integrated_split = list()
-for (i in unique(IDs)) {
-  scrna_integrated_split[[i]] = subset(scrna_integrated, idents = i)
-  DefaultAssay(scrna_integrated_split[[i]]) = "RNA"
-  scrna_integrated_split[[i]] = JoinLayers(scrna_integrated_split[[i]])
-}
-
-annotations.precisest = SingleR(test=scrna_integrated_split$MB@assays$RNA$counts,
-                             ref=scrna_integrated_split$Fetal@assays$RNA$counts,
-                             labels=scrna_integrated_split$Fetal$precisest.label,
-                             de.method="wilcox", de.n = 10)
-write_rds(annotations.precisest, "/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/MB/Integration_fetal_mb/Annotations/annotations_integrated_fetal_mb.precisest.rds")
-transfer.anno = as.data.frame(annotations.precisest$labels, row.names = rownames(annotations.precisest))
-transfer.anno$`annotations.precisest$labels` = as.factor(transfer.anno$`annotations.precisest$labels`)
-scrna_integrated_split$MB <- AddMetaData(scrna_integrated_split$MB, transfer.anno, col.name = "precisest.label")
-barcodes= as.data.frame(c(colnames(scrna_integrated_split$Fetal), colnames(scrna_integrated_split$MB)))
-metadata = as.data.frame(c(as.character(scrna_integrated_split$Fetal$precisest.label), as.character(scrna_integrated_split$MB$precisest.label)), row.names = barcodes$`c(colnames(scrna_integrated_split$Fetal), colnames(scrna_integrated_split$MB))`)
-scrna_integrated=AddMetaData(scrna_integrated, metadata, "precisest.label")
-#tab <- table(Assigned=annotations.precisest$labels, Cluster=scrna_integrated_split$MB$SCT_snn_res.0.8)
-#pheatmap(log2(tab+10), color=colorRampPalette(c("white", "blue"))(101))
-
-annotations.dev.state = SingleR(test=scrna_integrated_split$MB@assays$RNA$counts,
-                             ref=scrna_integrated_split$Fetal@assays$RNA$counts,
-                             labels=scrna_integrated_split$Fetal$dev.state,
-                             de.method="wilcox", de.n = 10)
-write_rds(annotations.dev.state, "/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/MB/Integration_fetal_mb/Annotations/annotations_integrated_fetal_mb_devstate.rds")
-transfer.anno = as.data.frame(annotations.dev.state$labels, row.names = rownames(annotations.dev.state))
-transfer.anno$`annotations.dev.state$labels` = as.factor(transfer.anno$`annotations.dev.state$labels`)
-scrna_integrated_split$MB <- AddMetaData(scrna_integrated_split$MB, transfer.anno, col.name = "dev.state")
-barcodes= as.data.frame(c(colnames(scrna_integrated_split$Fetal), colnames(scrna_integrated_split$MB)))
-metadata = as.data.frame(c(as.character(scrna_integrated_split$Fetal$dev.state), as.character(scrna_integrated_split$MB$dev.state)), row.names = barcodes$`c(colnames(scrna_integrated_split$Fetal), colnames(scrna_integrated_split$MB))`)
-scrna_integrated=AddMetaData(scrna_integrated, metadata, "dev.state")
-#tab <- table(Assigned=annotations.dev.state$labels, Cluster=scrna_integrated_split$MB$SCT_snn_res.0.8)
-#pheatmap(log2(tab+10), color=colorRampPalette(c("white", "blue"))(101))
-cancertype = as.data.frame(scrna_mimic$Cancer.type)
-scrna_integrated = AddMetaData(scrna_integrated, cancertype, "cancer.type")
-scrna_integrated$cancer.type = replace_na(scrna_integrated$cancer.type, "Fetal")
-write_rds(scrna_integrated, "/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/MB/Integration_fetal_mb/scrna_integrated.rds")
-
-
-Meta = read.csv2("/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/MB/Integration_fetal_mb/Annotations/Annotations_kaesmann.csv", sep = ",")
-Meta$Gene_name = toupper(Meta$Gene_name)
-Meta_hu_celltype = list()
-for (i in unique(Meta$Cell.state)) {
-  Meta_hu_celltype[[i]] = Meta[Meta$Cell.state == i,]
-}
-for (i in unique(Meta$Cell.state)) {
-  scrna_integrated = AddModuleScore(scrna_integrated, list(Meta_hu_celltype[[i]]$Gene_name), name = paste0(i, "_score"))
-}
-for (i in unique(Meta$Cell.state)) {
-  p = FeaturePlot(scrna_integrated, features = paste0(i, "_score1"), order=T, split.by = "new.idents")
-  print(p)
-}
-
-
-Idents(scrna_integrated) = "SCT_snn_res.1"
-scrna_integrated= PrepSCTFindMarkers(scrna_integrated)
-DEG = FindAllMarkers(scrna_integrated, only.pos = T, min.diff.pct = 0.1)
-DEG = DEG[DEG$p_val_adj<0.05,]
-Idents(scrna_integrated) = "SCT_snn_res.1"
-scrna_integrated = RenameIdents(scrna_integrated, c("0" = "GC/UBC",
-                                                    "1" = "Purkinje",
-                                                    "2" = "Progenitor_1",
-                                                    "3" = "GC_diff_1",
-                                                    "4" = "4",
-                                                    "5" = "Progenitor_2",
-                                                    "6" = "GC_diff_2",
-                                                    "7" = "7",
-                                                    "8" = "UBC",
-                                                    "9" = "GC_diff_3",
-                                                    "10" = "10",
-                                                    "11" = "UBC",
-                                                    "12" = "Immune",
-                                                    "13" = "VZ_Neuroblast",
-                                                    "14" = "GC_1",
-                                                    "15" = "GC_diff_4",
-                                                    "16" = "GC_diff_5",
-                                                    "17" = "VZ_Neuroblast",
-                                                    "18" = "GC_diff_6",
-                                                    "19" = "Glut_DN",
-                                                    "20" = "GC_diff_7",
-                                                    "21" = "GABA_DN",
-                                                    "22" = "22",
-                                                    "23" = "EC_1",
-                                                    "24" = "Oligodendrocyte",
-                                                    "25" = "GC_2",
-                                                    "26" = "Meningeal",
-                                                    "27" = "GC_3",
-                                                    "28" = "28",
-                                                    "29" = "Oligodendrocyte",
-                                                    "30" = "Interneuron_diff",
-                                                    "31" = "Progenitor_2",
-                                                    "32" = "Interneuron",
-                                                    "33" = "33",
-                                                    "34" = "EC_2",
-                                                    "35" = "UBC",
-                                                    "36" = "Progenitor_oligo",
-                                                    "37" = "Bergmann",
-                                                    "38" = "38", #Schwann Cells? 
-                                                    "39" = "GABA_DN",
-                                                    "40" = "Interneuron",
-                                                    "41" = "41", #Podocytes?
-                                                    "42" = "Astrocyte",
-                                                    "43" = "GC_4"))
-
-scrna_integrated$anno_stage1 = scrna_integrated@active.ident
-write_rds(scrna_integrated, "/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/MB/Integration_fetal_mb/scrna_integrated.rds")
-```
-
 
 
