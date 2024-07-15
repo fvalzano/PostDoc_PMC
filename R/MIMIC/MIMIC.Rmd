@@ -524,7 +524,7 @@ infercnv_mimic = infercnv::run(infercnv_mimic,
 scrna_integrated = infercnv::add_to_seurat(seurat_obj = scrna_integrated,
                                            infercnv_output_path = "/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/All/infercnv/CNV_output_xCelltype",
                                            top_n = 15)
-write_rds(infercnv_integrated, "/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/All/infercnv/CNV_output_xCancertype/scrna_integrated_infercnv.rds")
+write_rds(infercnv_integrated, "/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/All/infercnv/CNV_output_xCelltype/scrna_integrated_infercnv.rds")
 ```
 ```{r InferCNV_xCancertype}
 scrna_integrated = read_rds("/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/MB/Integration_fetal_mb/scrna_integrated.rds")
