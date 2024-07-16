@@ -4,8 +4,8 @@ author: "Francesco Valzano"
 date: "1/4/2024"
 output: html_document
 ---
-#All
-##Preprocess
+# All_samples
+## Preprocess
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
@@ -104,7 +104,7 @@ rm(seurat_objects)
 
 
 ```
-##Strategies
+## Strategies
 ```{r Data Merging -Important in Seurat v5- SCT Normalization, include=FALSE}
 #In Seurat v5 first merge the objects and then integrate them
 seurat_objects=qc_seurat_objects
@@ -182,7 +182,7 @@ write_rds(scrna_mimic, "/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/All/scrn
 ##write_rds(scrna_mimic, "/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/scrna_Log_CCA/scrna.rds")
 #DimPlot(scrna_mimic, group.by = "orig.ident")
 #```
-##Metadata curation
+## Metadata curation
 ```{r MimicID}
 #Add MimicID from excel sheet Metadata.xlsx
 scrna_mimic = read_rds("/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/All/scrna_mimic_all.rds")
@@ -228,7 +228,7 @@ scrna_mimic = AddMetaData(scrna_mimic, metadata = disease.ident, col.name = "Can
 write_rds(scrna_mimic, "/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/All/scrna_mimic_all.rds")
 
 ```
-##Trajectory + pseudotime - IMPORTANT: Not available in VSC, run on JobHopper
+## Trajectory + pseudotime - IMPORTANT: Not available in VSC, run on JobHopper
 ```{r Trajectory and Pseudotime by monocle3}
 scrna_mimic = read_rds("/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/All/scrna_mimic_all.rds")
 #convert seurat object in cds object using the specific wrapper
@@ -283,7 +283,7 @@ plot_cells(cds_mimic,
 
 
 ```
-##Integration with fetal development dataset
+## Integration with fetal development dataset
 ```{r Integration Fetal}
 #Create integrated object with kaesmann cerebellar fetal development dataset to highlight shared cell types
 scrna_mimic=read_rds("/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/All/scrna_mimic_all.rds")
@@ -354,7 +354,7 @@ meta = as.data.frame(scrna_kaesmann_subsampled$dev_state)
 scrna_integrated=AddMetaData(scrna_integrated, metadata = meta, col.name = "dev.state")
 write_rds(scrna_integrated, "/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/All/Integration_fetal_all/scrna_integrated.rds")
 ```
-#Annotation
+## Annotation
 ```{r Annotations integrated dataset}
 #This is a working progress
 scrna_mimic=read_rds("/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/MB/scrna_mimic_mb.rds")
@@ -479,7 +479,7 @@ write_rds(scrna_integrated, "/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/MB/
 
 
 
-##Copy Number Variation - IMPORTANT: Not available in VSC, run on JobHopper
+## Copy Number Variation - IMPORTANT: Not available in VSC, run on JobHopper
 ```{r InferCNV_xCelltype}
 scrna_integrated = read_rds("/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/All/Integration_fetal_all/scrna_integrated.rds")
 Idents(scrna_integrated) = "" #Annotation slot, work in progress
@@ -566,8 +566,8 @@ write_rds(infercnv_integrated, "/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/
 
 ```
 
-#Medulloblastoma
-##Preprocess_MB
+# Medulloblastoma
+## Preprocess_MB
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
@@ -658,7 +658,7 @@ rm(seurat_objects)
 
 
 ```
-##Strategies_MB
+## Strategies_MB
 ```{r Data Merging -Important in Seurat v5- SCT Normalization, include=FALSE}
 #In Seurat v5 first merge the objects and then integrate them
 seurat_objects=qc_seurat_objects
@@ -738,7 +738,7 @@ write_rds(scrna_mimic, "/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/MB/scrna
 #DimPlot(scrna_mimic, group.by = "orig.ident")
 #```
 
-##Metadata curation_MB
+## Metadata curation_MB
 ```{r MimicID}
 #Add MimicID from excel sheet Metadata.xlsx
 scrna_mimic = read_rds("/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/MB/scrna_mimic_mb.rds")
@@ -839,7 +839,7 @@ doublets_meta$Barcode = NULL
 scrna_mimic = AddMetaData(scrna_mimic, doublets_meta, "doublets")
 DimPlot(scrna_mimic, split.by = "doublets")
 ```
-##Trajectory + pseudotime_MB
+## Trajectory + pseudotime_MB
 ```{r Trajectory and Pseudotime by monocle3}
 scrna_mimic = read_rds("/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/MB/scrna_mimic_mb.rds")
 #convert seurat object in cds object using the specific wrapper
@@ -893,7 +893,7 @@ plot_cells(cds_mimic,
 
 
 ```
-##Integration with fetal development dataset_MB
+## Integration with fetal development dataset_MB
 ```{r Integration Fetal and Medulloblastoma}
 #Create integrated object with kaesmann cerebellar fetal development dataset to highlight shared cell types
 scrna_mimic=read_rds("/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/MB/scrna_mimic_mb.rds")
@@ -1046,8 +1046,8 @@ write_rds(infercnv_integrated, "/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/
 
 ```
 
-#Ependymoma
-##Preprocess_EP
+# Ependymoma
+## Preprocess_EP
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
@@ -1138,7 +1138,7 @@ rm(seurat_objects)
 
 
 ```
-##Strategies_EP
+## Strategies_EP
 ```{r Data Merging -Important in Seurat v5- SCT Normalization, include=FALSE}
 seurat_objects=qc_seurat_objects
 seurat_objects_first = seurat_objects[[1]]
@@ -1213,7 +1213,7 @@ scrna_mimic = RunUMAP(scrna_mimic, reduction = "integrated.dr", dims = 1:50, red
 #write_rds(scrna_mimic, "scrna_Log_CCA/scrna.rds")
 DimPlot(scrna_mimic, group.by = "orig.ident")
 ```
-##Metadata curation_EP
+## Metadata curation_EP
 ```{r MimicID}
 metadata_sequencing = readxl::read_xlsx("/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Metadata.xlsx", sheet = 1)
 metadata_ID = readxl::read_xlsx("/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Metadata.xlsx", sheet = 2)
@@ -1314,7 +1314,7 @@ doublets_meta$Barcode = NULL
 scrna_mimic = AddMetaData(scrna_mimic, doublets_meta, "doublets")
 DimPlot(scrna_mimic, split.by = "doublets")
 ```
-##Trajectory + pseudotime_EP
+## Trajectory + pseudotime_EP
 ```{r Trajectory and Pseudotime by monocle3}
 scrna_mimic = read_rds("EP/scrna_mimic_ep.rds")
 cds_mimic = as.cell_data_set(scrna_mimic)
@@ -1358,7 +1358,7 @@ plot_cells(cds_mimic,
 
 
 ```
-##Integration with fetal development dataset_EP
+## Integration with fetal development dataset_EP
 ```{r Integration Fetal and Ependymoma}
 scrna_mimic=read_rds("/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/EP/scrna_mimic_ep.rds")
 scrna_kaesmann = readRDS(file = "/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum Development/Kaesmann/seurat.rds")
