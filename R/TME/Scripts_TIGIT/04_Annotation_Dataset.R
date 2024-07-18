@@ -11,6 +11,7 @@ metafeatures$ENSG = rownames(metafeatures)
 scrna_matrix = scrna_kaesmann@assays[["RNA"]]@counts
 rownames(scrna_kaesmann@assays[["RNA"]]@counts) = ifelse(scrna_matrix@Dimnames[[1]] %in% metafeatures$ENSG, as.character(metafeatures$feature_name), NA)
 DefaultAssay(scrna_mb) = "RNA"
+scrna_mb = scrna_mb[, sample(colnames(scrna_mb), size =50000, replace=F)]
 annotations = SingleR(test=scrna_mb@assays$RNA$counts,
                              ref=scrna_kaesmann@assays$RNA$counts, 
                              labels=scrna_kaesmann$author_cell_type,
@@ -18,4 +19,4 @@ annotations = SingleR(test=scrna_mb@assays$RNA$counts,
 transfer.anno = as.data.frame(annotations$labels, row.names = rownames(annotations))
 transfer.anno$`annotations$labels` = as.factor(transfer.anno$`annotations$labels`)
 scrna_mb <- AddMetaData(scrna_mb, transfer.anno, col.name = "kaesmann_label")
-write_rds(scrna_mb, "/hpc/pmc_kool/fvalzano/Rstudio_Test1/TME/TME_files_March24/TME_TIGIT/Seurat_subsets/scrna_mb.rds")
+write_csv(scrna_mb$kaesmann_label, "hpc/pmc_kool/fvalzano/Rstudio_Test1/TME/TME_files_March24/TME_TIGIT/Annotation/Metadata_subsampled_seurat.csv")
