@@ -12,7 +12,7 @@ scrna$Major_classes_FV = as.factor(ifelse(scrna$SCT_snn_res.0.4 %in% "0", "TME_1
                                                ifelse(scrna$SCT_snn_res.0.4 %in% "35", "TME_3",
                                                  ifelse(scrna$SCT_snn_res.0.4 %in% "41", "TME_4",
                                                  paste0("Tumor_Cells_", scrna$SCT_snn_res.0.4)))))
-, "28", "41", "35")
+
 Idents(scrna) = "Dataset"
 scrna_list=list()
 counts_matrix = list()
@@ -53,7 +53,7 @@ for(i in unique(scrna$Dataset)) {
   infercnv[[i]] = infercnv::run(infercnv_objs[[i]],
                                 cutoff=0.1,
                                 out_dir=paste0("/hpc/pmc_kool/fvalzano/Rstudio_Test1/TME/TME_files_March24/InferCNV/Output/", i, "_InferCNV"),
-                                analysis_mode = "subclusters",
+                                #analysis_mode = "subclusters",
                                 cluster_by_groups=T,
                                 denoise=TRUE,
                                 HMM=TRUE,
