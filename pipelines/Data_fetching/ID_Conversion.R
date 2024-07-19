@@ -10,7 +10,7 @@ Overview=Overview %>%
 IDs = c("806AAS", "222AAS", "745AAS")
 IDs = IDs[order(IDs, decreasing = F)]
 #Fetch the different IDs for sample type
-IDs_RNA_Patient_Biosource= Overview[Overview$PMCID %in% IDs,]$'RNAseq Patient Biosource'
+IDs_RNA_Patient_Biosource= Overview[Overview$PMCID %in% IDs,]$'RNAseq Patient Biomaterial'
 IDs_RNA_Tumoroid_Biomaterial= Overview[Overview$PMCID %in% IDs,]$'RNAseq Tumoroid Biomaterial'
-writeLines(IDs_RNA_Patient_Biosource, "/hpc/pmc_kool/fvalzano/PostDoc_PMC/pipelines/Data_fetching/IDs/RNAseq_Patient_Biosource.txt")
+writeLines(IDs_RNA_Patient_Biosource, "/hpc/pmc_kool/fvalzano/PostDoc_PMC/pipelines/Data_fetching/IDs/RNAseq_Patient_Biomaterial.txt")
 writeLines(IDs_RNA_Tumoroid_Biomaterial, "/hpc/pmc_kool/fvalzano/PostDoc_PMC/pipelines/Data_fetching/IDs/RNAseq_Tumoroid_Biomaterial.txt")
