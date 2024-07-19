@@ -5,7 +5,7 @@ library(infercnv)
 
 #DISCLAIMER_FV: perform inferCNV on Jobhopper, as VSCode instances have troubles with JAGS <--- Fix this someday
 #WithAnnotation
-scrna = read_rds("/hpc/pmc_kool/fvalzano/Rstudio_Test1/TME/TME_files_March24/scrna_harmony.rds")
+scrna = read_rds("/hpc/pmc_kool/fvalzano/Rstudio_Test1/TME/TME_files_March24/Seurat_subsets/Post_Integration/scrna_harmony.rds")
 #Create annotation for each Tumor Cell clusters and TME clusters to be used as experimental and reference group in InferCNV
 scrna$Major_classes_FV = as.factor(ifelse(scrna$SCT_snn_res.0.4 %in% "0", "TME_1",
                                           ifelse(scrna$SCT_snn_res.0.4 %in% "28", "TME_2",
