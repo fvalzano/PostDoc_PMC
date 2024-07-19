@@ -2,7 +2,7 @@ library(Seurat)
 library(readr)
 
 #---------------->Adjust according integration method<----------------
-scrna = read_rds("/hpc/pmc_kool/fvalzano/Rstudio_Test1/TME/TME_files_March24/Post_Integration/scrna_harmony.rds")
+scrna = read_rds("/hpc/pmc_kool/fvalzano/Rstudio_Test1/TME/TME_files_March24/Seurat_subsets/Post_Integration/scrna_harmony.rds")
 Idents(scrna) = "Entity"
 scrna_subset = list()
 for (i in unique(scrna$Entity)) {
