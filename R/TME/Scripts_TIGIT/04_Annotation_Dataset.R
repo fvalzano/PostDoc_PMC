@@ -19,4 +19,4 @@ annotations = SingleR(test=scrna_mb@assays$RNA$counts,
 transfer.anno = as.data.frame(annotations$labels, row.names = rownames(annotations))
 transfer.anno$`annotations$labels` = as.factor(transfer.anno$`annotations$labels`)
 scrna_mb <- AddMetaData(scrna_mb, transfer.anno, col.name = "kaesmann_label")
-write_csv(scrna_mb$kaesmann_label, "hpc/pmc_kool/fvalzano/Rstudio_Test1/TME/TME_files_March24/TME_TIGIT/Annotation/Metadata_subsampled_seurat.csv")
+write.csv2(scrna_mb$kaesmann_label, "/hpc/pmc_kool/fvalzano/Rstudio_Test1/TME/TME_files_March24/TME_TIGIT/Annotation/Metadata_subsampled_seurat.csv")
