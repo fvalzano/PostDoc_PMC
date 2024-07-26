@@ -13,7 +13,7 @@ scrna$Major_classes_FV = as.factor(ifelse(scrna$SCT_snn_res.0.4 %in% "0", "TME_1
                                           ifelse(scrna$SCT_snn_res.0.4 %in% "28", "TME_2",
                                                ifelse(scrna$SCT_snn_res.0.4 %in% "35", "TME_3",
                                                  ifelse(scrna$SCT_snn_res.0.4 %in% "41", "TME_4",
-                                                 paste0("Tumor_Cells_", scrna$SCT_snn_res.0.4)))))
+                                                 paste0("Tumor_Cells_", scrna$SCT_snn_res.0.4))))))
 
 Idents(scrna) = "Dataset"
 scrna_list=list()
