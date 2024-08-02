@@ -2,12 +2,12 @@ library(readxl)
 library(dplyr)
 library(stringr)
 #Load Overview files containing different IDs
-Overview = read_xlsx("/hpc/pmc_kool/fvalzano/PostDoc_PMC/pipelines/Overview/General_overview_patient_seqdata.xlsx")
+Overview = read_xlsx("/hpc/pmc_kool/fvalzano/Overview/General_overview_patient_seqdata.xlsx")
 #Delete potential space in the PMCID - this creates troubles during the fetching procedure
 Overview=Overview %>% 
   mutate(across(where(is.character), str_trim))
-#Specify PMCIDs of interest
-IDs = c("806AAS", "222AAS", "745AAS")
+#-----------IMPORTANT:Specify PMCIDs of interest-----------
+IDs = c()
 IDs = IDs[order(IDs, decreasing = F)]
 #Fetch the different IDs for sample type
 IDs_RNA_Patient_Biosource= Overview[Overview$PMCID %in% IDs,]$'RNAseq Patient Biomaterial'
