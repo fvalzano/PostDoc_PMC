@@ -4,8 +4,11 @@
 #In this specific case the sequencing runs on multiple lanes are the following: ITCC-P4_MB0072/Fastq/pr01-f01-r01, ITCC-P4_MB0646/Fastq/pp01-f01-r01 & ITCC-P4_MB0646/Fastq/tp01-f01-r01
 
 # Navigate to the PMC_MB directory
-multiple_lane_sample='ITCC-P4_MB0646/Fastq/tp01-f01-r01'
-cd /hpc/pmc_kool/ITCCP4/PMC_MB/${multiple_lane_sample}
+multiple_lane_sample='ITCC-P4_MB0646'
+file='Fastq'
+subdir='tp01-f01-r01'
+
+cd /hpc/pmc_kool/ITCCP4/PMC_MB/${multiple_lane_sample}/${file}/${subdir}
   # Extract unique sample names and process each sample - sample variable is important for the naming of the .fasta.input naming
             for sample in $(ls | cut -d '-' -f 1-2 | uniq); do
                 # Initialize the counter for the line identifiers
@@ -25,15 +28,14 @@ cd /hpc/pmc_kool/ITCCP4/PMC_MB/${multiple_lane_sample}
                         # Get the full paths for the forward and reverse files
                         forward_path=$(realpath "$forward")
                         reverse_path=$(realpath "$reverse")
-                        
                         # Write the entry to the .fasta.inputs file
                         printf "${line_id}\t${sample_and_lane}\t${forward_path}\t${reverse_path}\n" >> "${sample}.fasta.inputs"
-                        
                         # Increment the counter
                         counter=$((counter + 1))
                     fi
                 done
             done
-scp "${sample}.fasta.inputs" /hpc/pmc_kool/fvalzano/wdl_pipeline_v12.1.0/wdl/inputs/fasta_inputs
+mkdir -p "/hpc/pmc_kool/fvalzano/wdl_pipeline_v12.1.0/wdl/inputs/fasta_inputs/${multiple_lane_sample}/${subdir}"
+scp "${sample}.fasta.inputs" "/hpc/pmc_kool/fvalzano/wdl_pipeline_v12.1.0/wdl/inputs/fasta_inputs/${multiple_lane_sample}/${subdir}"
 rm "${sample}.fasta.inputs"
 
