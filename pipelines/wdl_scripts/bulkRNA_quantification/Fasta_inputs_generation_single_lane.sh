@@ -17,7 +17,8 @@ for dir in */; do
             reverse=$(realpath $(ls | grep _R2.fastq.gz))
             # Write the .fasta.inputs file
             printf "001\t${sample}\t${forward}\t${reverse}" > "${sample}.fasta.inputs"
-            scp "${sample}.fasta.inputs" /hpc/pmc_kool/fvalzano/wdl_pipeline_v12.1.0/wdl/inputs/fasta_inputs
+            mkdir -p "/hpc/pmc_kool/fvalzano/wdl_pipeline_v12.1.0/wdl/inputs/fasta_inputs/${dir}${subdir}"
+            scp "${sample}.fasta.inputs" "/hpc/pmc_kool/fvalzano/wdl_pipeline_v12.1.0/wdl/inputs/fasta_inputs/${dir}${subdir}"
             rm "${sample}.fasta.inputs"
      # Return to the Fastq directory
             cd ..
@@ -26,4 +27,3 @@ for dir in */; do
         cd ../..
     fi
 done
-
