@@ -17,3 +17,5 @@ cd ..
 module use --append /hpc/local/Rocky8/pmc_kool/modulefiles
 module load R/4.3.0
 Rscript /hpc/pmc_kool/fvalzano/PostDoc_PMC/pipelines/DESeq2/DESeq2.R
+
+cp "$0" "/hpc/pmc_kool/fvalzano/PostDoc_PMC/pipelines/DESeq2/Script_copies/Requests/$Output_folder/$(basename "$0")"
