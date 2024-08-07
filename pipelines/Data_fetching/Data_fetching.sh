@@ -17,7 +17,7 @@ Output_folder="${Date}_${Requester}"
 cd Requests
 mkdir -p "$Output_folder"
 cd ..
-RNAseq_Patient_Biosource_input_file="IDs/RNAseq_Patient_Biomaterial.txt"
+RNAseq_Patient_Biomaterial_input_file="IDs/RNAseq_Patient_Biomaterial.txt"
 # Read each label in the input file
 while IFS= read -r label; do
 mkdir "Requests/$Output_folder"
