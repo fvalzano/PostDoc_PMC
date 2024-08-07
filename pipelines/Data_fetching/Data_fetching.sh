@@ -34,7 +34,7 @@ mkdir "/hpc/pmc_kool/fvalzano/pipelines_fv_output/Requests/$Output_folder"
 wget -m -r -nd -np -P "/hpc/pmc_kool/fvalzano/pipelines_fv_output/Requests/$Output_folder" --user fvalzano --password Brindisi.2021 -e robots=off "https://files.bioinf.prinsesmaximacentrum.nl/shares/PMCLAB2020-142/" --accept=${label}*gene_id.exon.counts.txt
 done < "$RNAseq_Relapse_Biomaterial_input_file"
 
-cd Requests
+cd /hpc/pmc_kool/fvalzano/pipelines_fv_output/Data_fetching/Requests
 mkdir -p "$Output_folder"
 cd ..
 RNAseq_Tumoroid_Biomaterial_input_file="/hpc/pmc_kool/fvalzano/pipelines_fv_output/Data_fetching/IDs/RNAseq_Tumoroid_Biomaterial.txt"
