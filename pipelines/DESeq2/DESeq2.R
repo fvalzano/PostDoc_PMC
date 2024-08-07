@@ -5,12 +5,12 @@ library(ggplot2)
 library(umap)
 library(uwot)
 #Load bulk RNAseq runs from specific requests folder
-##----------------------IMPORTANT=Modify request folder variable----------------------
+##----------------------IMPORTANT=Modify request folder variable and IDs----------------------
 result_directory = "20240701_Francesco"
 IDs = c()
 IDs = IDs[order(IDs, decreasing = F)]
 ##Set up list to contain the single bulk RNA seq runs, delete unnecessary columns and rename remaining ones (counts and gene name)
-RNAseq_files = list.files(paste0("/hpc/pmc_kool/fvalzano/PostDoc_PMC/pipelines/Data_fetching/Requests/", result_directory))
+RNAseq_files = list.files(paste0("/hpc/pmc_kool/fvalzano/pipelines_fv_output/Data_fetching/Requests/", result_directory))
 RNAseq_runs = list()
 for (file in RNAseq_files) {
    RNAseq_runs[[file]]=read.table(paste0("/hpc/pmc_kool/fvalzano/pipelines_fv_output/Requests", result_directory, "/", file), )
