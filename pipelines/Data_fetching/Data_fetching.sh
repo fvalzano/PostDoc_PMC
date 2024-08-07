@@ -44,3 +44,5 @@ mkdir "/hpc/pmc_kool/fvalzano/pipelines_fv_output/Requests/$Output_folder"
     # Search for files containing the label in their name
 wget -m -r -nd -np -P "/hpc/pmc_kool/fvalzano/pipelines_fv_output/Requests/$Output_folder" --user fvalzano --password Brindisi.2021 -e robots=off "https://files.bioinf.prinsesmaximacentrum.nl/shares/PMCLAB2020-142/" --accept=${label}*gene_id.exon.counts.txt
 done < "$RNAseq_Tumoroid_Biomaterial_input_file"
+
+cp "$0" "/hpc/pmc_kool/fvalzano/PostDoc_PMC/pipelines/Data_fetching/Script_copies/Requests/$Output_folder/$(basename "$0")"
