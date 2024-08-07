@@ -25,7 +25,7 @@ mkdir "/hpc/pmc_kool/fvalzano/pipelines_fv_output/Requests/$Output_folder"
 wget -m -r -nd -np -P "/hpc/pmc_kool/fvalzano/pipelines_fv_output/Requests/$Output_folder" --user fvalzano --password Brindisi.2021 -e robots=off "https://files.bioinf.prinsesmaximacentrum.nl/shares/PMCLAB2020-142/" --accept=${label}*gene_id.exon.counts.txt
 done < "$RNAseq_Patient_Biomaterial_input_file"
 
-cd /hpc/pmc_kool/fvalzano/PostDoc_PMC/pipelines/Data_fetching/Requests
+cd /hpc/pmc_kool/fvalzano/pipelines_fv_output/Data_fetching/Requests
 RNAseq_Relapse_Biomaterial_input_file="/hpc/pmc_kool/fvalzano/pipelines_fv_output/Data_fetching/IDs/RNAseq_Relapse_Biomaterial.txt"
 # Read each label in the input file
 while IFS= read -r label; do
