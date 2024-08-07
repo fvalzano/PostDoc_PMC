@@ -33,5 +33,4 @@ for dir in "${directories[@]}"; do
         "$workflow_source" \
         "$workflow_inputs" \
         "modules.zip"
-    sleep 43200 
 done
