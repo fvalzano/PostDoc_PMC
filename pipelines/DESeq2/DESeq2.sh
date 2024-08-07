@@ -6,11 +6,11 @@
 #SBATCH -e errlog.out
 
 #Set up date and requester
-Date="20240701"
-Requester="Francesco"
+Date="20240807"
+Requester="Julie"
 Output_folder="${Date}_${Requester}"
-cd Requests
-mkdir -p "$Output_folder"
+cd /hpc/pmc_kool/fvalzano/pipelines_fv_output/Data_fetching/Requests
+mkdir -p "/hpc/pmc_kool/fvalzano/pipelines_fv_output/Data_fetching/Requests/$Output_folder"
 cd ..
 
 #Run DESeq2
