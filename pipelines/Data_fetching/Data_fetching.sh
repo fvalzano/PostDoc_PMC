@@ -11,27 +11,36 @@ module load R/4.3.0
 Rscript /hpc/pmc_kool/fvalzano/PostDoc_PMC/pipelines/Data_fetching/ID_Conversion.R
 
 #Set up date and requester
-Date="20240701"
-Requester="Francesco"
+Date="20240807"
+Requester="Julie"
 Output_folder="${Date}_${Requester}"
-cd Requests
+cd /hpc/pmc_kool/fvalzano/pipelines_fv_output/Data_fetching/Requests
 mkdir -p "$Output_folder"
 cd ..
-RNAseq_Patient_Biomaterial_input_file="IDs/RNAseq_Patient_Biomaterial.txt"
+RNAseq_Patient_Biomaterial_input_file="/hpc/pmc_kool/fvalzano/pipelines_fv_output/Data_fetching/IDs/RNAseq_Patient_Biomaterial.txt"
 # Read each label in the input file
 while IFS= read -r label; do
-mkdir "Requests/$Output_folder"
+mkdir "/hpc/pmc_kool/fvalzano/pipelines_fv_output/Requests/$Output_folder"
     # Search for files containing the label in their name
-wget -m -r -nd -np -P "Requests/$Output_folder" --user fvalzano --password Brindisi.2021 -e robots=off "https://files.bioinf.prinsesmaximacentrum.nl/shares/PMCLAB2020-142/" --accept=${label}*gene_id.exon.counts.txt
+wget -m -r -nd -np -P "/hpc/pmc_kool/fvalzano/pipelines_fv_output/Requests/$Output_folder" --user fvalzano --password Brindisi.2021 -e robots=off "https://files.bioinf.prinsesmaximacentrum.nl/shares/PMCLAB2020-142/" --accept=${label}*gene_id.exon.counts.txt
 done < "$RNAseq_Patient_Biomaterial_input_file"
+
+cd /hpc/pmc_kool/fvalzano/PostDoc_PMC/pipelines/Data_fetching/Requests
+RNAseq_Relapse_Biomaterial_input_file="/hpc/pmc_kool/fvalzano/pipelines_fv_output/Data_fetching/IDs/RNAseq_Relapse_Biomaterial.txt"
+# Read each label in the input file
+while IFS= read -r label; do
+mkdir "/hpc/pmc_kool/fvalzano/pipelines_fv_output/Requests/$Output_folder"
+    # Search for files containing the label in their name
+wget -m -r -nd -np -P "/hpc/pmc_kool/fvalzano/pipelines_fv_output/Requests/$Output_folder" --user fvalzano --password Brindisi.2021 -e robots=off "https://files.bioinf.prinsesmaximacentrum.nl/shares/PMCLAB2020-142/" --accept=${label}*gene_id.exon.counts.txt
+done < "$RNAseq_Relapse_Biomaterial_input_file"
 
 cd Requests
 mkdir -p "$Output_folder"
 cd ..
-RNAseq_Tumoroid_Biomaterial_input_file="IDs/RNAseq_Tumoroid_Biomaterial.txt"
+RNAseq_Tumoroid_Biomaterial_input_file="/hpc/pmc_kool/fvalzano/pipelines_fv_output/Data_fetching/IDs/RNAseq_Tumoroid_Biomaterial.txt"
 # Read each label in the input file
 while IFS= read -r label; do
-mkdir "Requests/$Output_folder"
+mkdir "/hpc/pmc_kool/fvalzano/pipelines_fv_output/Requests/$Output_folder"
     # Search for files containing the label in their name
-wget -m -r -nd -np -P "Requests/$Output_folder" --user fvalzano --password Brindisi.2021 -e robots=off "https://files.bioinf.prinsesmaximacentrum.nl/shares/PMCLAB2020-142/" --accept=${label}*gene_id.exon.counts.txt
+wget -m -r -nd -np -P "/hpc/pmc_kool/fvalzano/pipelines_fv_output/Requests/$Output_folder" --user fvalzano --password Brindisi.2021 -e robots=off "https://files.bioinf.prinsesmaximacentrum.nl/shares/PMCLAB2020-142/" --accept=${label}*gene_id.exon.counts.txt
 done < "$RNAseq_Tumoroid_Biomaterial_input_file"
