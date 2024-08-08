@@ -1,5 +1,5 @@
 ## This code allows to use the bulkRNA analysis pipeline from PMC - This script has been optimized fo experiments belonging to the ITCCP4
-project='ITCCP4'
+    project='ITCCP4'
 
 ## Input file preparation:
 First, run the Fasta_inputs_generation_single_lane.sh
