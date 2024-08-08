@@ -11,8 +11,8 @@ E.g. you have sequencing runs A, B, C. A, B are single lane and C is multi lanes
 
     bash Fasta_inputs_generation_multi_lanes.sh 
     
-for sample C only. This will output a .fasta file in the right format
-Then, manually adjust the entries in the multiple lanes script and run it as many times as the samples on multiple lanes.
+for sample C only. This will output a .fasta file in the right format.
+Remember to manually adjust the entries in the Fasta_inputs_generation_multi_lanes.sh script and run it specifying the samples on multiple lanes.
 
 After that, it is time to retrieve the barcode information, for this, run the following script:
 
@@ -35,7 +35,7 @@ function multiple times or save the same script multiple times). This will allow
 Second, we will create json file to use the ubam to counts conversion. Generate the json file with the following script:
 
     bash /hpc/pmc_kool/fvalzano/PostDoc_PMC/pipelines/wdl_scripts/bulkRNA_quantification/Rna_fusions_germline_snv_inputs_no_molgenis_fv_generation.sh
-    
+
 IMPORTANT: Don't forget to fill in the information in the newly generated json files (I left comments in the boxes that need to be adjusted)   ---> Try to automate?
 
 
