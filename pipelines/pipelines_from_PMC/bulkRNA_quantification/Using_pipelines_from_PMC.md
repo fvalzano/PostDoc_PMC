@@ -7,9 +7,10 @@ First, run the Fasta_inputs_generation_single_lane.sh
     bash /hpc/pmc_kool/fvalzano/PostDoc_PMC/pipelines/wdl_scripts/bulkRNA_quantification/Fasta_inputs_generation_single_lane.sh
 
 In case of mixed runs, meaning some reads are single lane and other multi lanes, delete the output of the single lane script for the multiple lanes run.
-E.g. you have sequencing runs A, B, C. A, B are single lane and C is multi lanes, Fasta_inputs_generation_single_lane.sh will output a .fasta also for C,
-however, this will be in a wrong format. After deleting this file, run 
+E.g. you have sequencing runs A, B, C. A, B are single lane and C is multi lanes, running Fasta_inputs_generation_single_lane.sh will output a .fasta also for C,  however, this will be in a wrong format. After deleting the output of Fasta_inputs_generation_single_lane.sh for file C, run 
+
     bash Fasta_inputs_generation_multi_lanes.sh 
+    
 for sample C only. This will output a .fasta file in the right format
 Then, manually adjust the entries in the multiple lanes script and run it as many times as the samples on multiple lanes.
 
