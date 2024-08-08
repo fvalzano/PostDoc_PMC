@@ -38,4 +38,5 @@ IMPORTANT: Don't forget to fill in the information in the newly generated json f
 ## ------UBAM TO COUNTS------
 Now, convert the ubam files in count tables using the modified script to loop through several samples (instead of calling the same
 function multiple times or save the same script multiple times). This will allow one bash command to submit all the samples you are querying.
+
     bash /hpc/pmc_kool/fvalzano/PostDoc_PMC/pipelines/pipelines_from_PMC/bulkRNA_quantification/${project}/run_rna_fusion_workflow_fv_looped.sh
