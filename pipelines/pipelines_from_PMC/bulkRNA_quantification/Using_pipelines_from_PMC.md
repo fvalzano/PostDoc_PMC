@@ -1,4 +1,4 @@
-## This code allows to use the bulkRNA analysis pipeline from PMC - This script has been optimized fo experiments belonging to the ITCCP4
+## This code allows to use the bulkRNA analysis pipeline from PMC - This script has been optimized for experiments belonging to the ITCCP4
     project='ITCCP4'
 
 ## Input file preparation:
