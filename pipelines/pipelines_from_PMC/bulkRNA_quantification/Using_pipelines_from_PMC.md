@@ -15,6 +15,7 @@ for sample C only. This will output a .fasta file in the right format
 Then, manually adjust the entries in the multiple lanes script and run it as many times as the samples on multiple lanes.
 
 After that, it is time to retrieve the barcode information, for this, run the following script:
+
     bash /hpc/pmc_kool/fvalzano/PostDoc_PMC/pipelines/wdl_scripts/bulkRNA_quantification/Barcodes_search.sh
 
 Now that all the input files are ready, we can start using the pipeline:
@@ -22,6 +23,7 @@ In order to use the pipelines we will need to modify the .json input file for ea
 First we will create json files to use the fastq to ubam conversion. Generate the json files with the following script:
 
     bash /hpc/pmc_kool/fvalzano/PostDoc_PMC/pipelines/wdl_scripts/bulkRNA_quantification/Fastq_ubam_workflow_fv_inputs_json_generation.sh
+
 IMPORTANT: Don't forget to fill in the information in the newly generated json files (I left comments in the boxes that need to be adjusted)  ---> Try to automate?
 
 ## ------FASTQ TO UBAM------
@@ -33,6 +35,7 @@ function multiple times or save the same script multiple times). This will allow
 Second, we will create json file to use the ubam to counts conversion. Generate the json file with the following script:
 
     bash /hpc/pmc_kool/fvalzano/PostDoc_PMC/pipelines/wdl_scripts/bulkRNA_quantification/Rna_fusions_germline_snv_inputs_no_molgenis_fv_generation.sh
+    
 IMPORTANT: Don't forget to fill in the information in the newly generated json files (I left comments in the boxes that need to be adjusted)   ---> Try to automate?
 
 
