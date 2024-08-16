@@ -6,6 +6,7 @@ library(viridis)
 library(dittoSeq)
 library(dplyr)
 library(str2str)
+library(presto)
 scrna = read_rds("/hpc/pmc_kool/fvalzano/Rstudio_Test1/TME/TME_files_March24/Seurat_subsets/Post_Integration/scrna_harmony.rds")
 #Overview public datasets
 pdf("/hpc/pmc_kool/fvalzano/Presentation_plots/20240822_TME_update/UMAP_FullDataset.pdf", width = 7.5, height = 5)
@@ -178,5 +179,57 @@ DotPlot(scrna_immune_lymphoid,
         col.min = 0)+
         theme(axis.text.x = element_text(angle = 45, hjust = 1),
         panel.grid = element_line(linewidth = 0.1))+
+        scale_color_gradientn(colors = plasma(n = 10, direction = -1))
+dev.off()
+
+##MIMIC section
+scrna_mimic = readRDS("/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/All/scrna_mimic_all.rds")
+pdf("/hpc/pmc_kool/fvalzano/Presentation_plots/20240822_TME_update/MIMIC_UMAP.pdf", width = 7.5, height = 5)
+DimPlot(scrna_mimic, reduction = "umap", group.by="Cancer.type") +        
+        ggtitle("Unintegrated Dataset (No batch effect applied)")+
+        theme(title = element_text(size = 10), legend.text = element_text(size = 10))
+DimPlot(scrna_mimic, reduction = "umap_harmony", group.by="Cancer.type")+
+        ggtitle("Integrated Dataset (Harmony batch effect removal applied)")+
+        theme(title = element_text(size = 10), legend.text = element_text(size = 10))
+dev.off()
+pdf("/hpc/pmc_kool/fvalzano/Presentation_plots/20240822_TME_update/MIMIC_UMAP_Lou0.4.pdf", width = 7.5, height = 5)
+DimPlot(scrna_mimic, reduction = "umap_harmony", group.by= "SCT_snn_res.0.4", label = T)+
+        ggtitle("Louvain Clustering (Resolution: 0.4)")+
+        theme(title = element_text(size = 10), 
+              legend.text = element_text(size = 10))
+scrna_mimic$Major_classes_FV = ifelse(scrna_mimic$SCT_snn_res.0.4 == "10", "Immune",
+                                        ifelse(scrna_mimic$SCT_snn_res.0.4 == "21", "Astroglia",
+                                                ifelse(scrna_mimic$SCT_snn_res.0.4 == "12", "Fb1",
+                                                        ifelse(scrna_mimic$SCT_snn_res.0.4 == "23", "Fb2",
+                                                                ifelse(scrna_mimic$SCT_snn_res.0.4 == "30", "Pericytes",
+                                                                        ifelse(scrna_mimic$SCT_snn_res.0.4 == "24", "EC", "Neuronal"))))))
+DimPlot(scrna_mimic, group.by= "Major_classes_FV", reduction = "umap_harmony")+
+        ggtitle("Major cell lineages")+
+        theme(title = element_text(size = 10), 
+              legend.text = element_text(size = 10))
+
+dev.off()
+
+pdf("/hpc/pmc_kool/fvalzano/Presentation_plots/20240822_TME_update/MIMIC_UMAP_Immune_Subset.pdf", width = 7.5, height = 5)
+scrna_mimic = readRDS("/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/All/scrna_mimic_all.rds")
+Idents(scrna_mimic) = "SCT_snn_res.0.4"
+scrna_mimic_immune = subset(scrna_mimic, idents = "10")
+scrna_mimic_immune = RunPCA(scrna_mimic_immune, verbose = FALSE, assay = "SCT", npcs= 50)
+scrna_mimic_immune <- IntegrateLayers(object = scrna_mimic_immune, method = HarmonyIntegration,
+  orig.reduction = "pca", new.reduction = 'harmony', assay = "SCT", normalization.method = "SCT",
+verbose = FALSE)
+scrna_mimic_immune = RunUMAP(scrna_mimic_immune, reduction = "harmony", dims = 1:30, reduction.name = "umap_harmony")
+DimPlot(scrna_mimic_immune, group.by = "Cancer.type", reduction = "umap_harmony")+
+        ggtitle("Immune Cells subset")+
+        theme(title = element_text(size = 10), 
+              legend.text = element_text(size = 10))
+
+dev.off()
+pdf("/hpc/pmc_kool/fvalzano/Presentation_plots/20240822_TME_update/MIMIC_GeneExpression_Immune_Subset.pdf", width = 7.5, height = 5)
+FeaturePlot(scrna_mimic_immune, features = "ITGAX", order = T, reduction = "umap_harmony")+
+        scale_color_gradientn(colors = plasma(n = 10, direction = -1))
+FeaturePlot(scrna_mimic_immune, features = "CD3D", order = T, reduction = "umap_harmony")+
+        scale_color_gradientn(colors = plasma(n = 10, direction = -1))
+FeaturePlot(scrna_mimic_immune, features = "CD19", order = T, reduction = "umap_harmony")+
         scale_color_gradientn(colors = plasma(n = 10, direction = -1))
 dev.off()
