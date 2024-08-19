@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# Navigate to the PMC_MB directory
+# Navigate to the directory one level above the directory containing the Fastq files
 cd /hpc/pmc_kool/ITCCP4/PMC_MB
 for dir in */; do
-    # Enter the Fastq subdirectory of each subfolder
+    # Enter in the Fastq subdirectory of each subfolder
     if [ -d "$dir/Fastq" ]; then
         cd "$dir/Fastq"
 
@@ -17,8 +17,11 @@ for dir in */; do
             reverse=$(realpath $(ls | grep _R2.fastq.gz))
             # Write the .fasta.inputs file
             printf "001\t${sample}\t${forward}\t${reverse}" > "${sample}.fasta.inputs"
+            # Create directories for each samples - change at need in your favourite directory
             mkdir -p "/hpc/pmc_kool/fvalzano/wdl_pipeline_v12.1.0/wdl/inputs/fasta_inputs/${dir}${subdir}"
+            # Transfer the newly generated fasta in your favourite directory
             scp "${sample}.fasta.inputs" "/hpc/pmc_kool/fvalzano/wdl_pipeline_v12.1.0/wdl/inputs/fasta_inputs/${dir}${subdir}"
+            # Clean up - we don't want same files all over the places :)
             rm "${sample}.fasta.inputs"
      # Return to the Fastq directory
             cd ..

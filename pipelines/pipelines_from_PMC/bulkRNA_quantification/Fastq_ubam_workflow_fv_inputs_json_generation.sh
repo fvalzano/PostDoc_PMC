@@ -4,6 +4,7 @@ for dir in */; do
     for sample in `ls`; do
         mkdir -p /hpc/pmc_kool/fvalzano/wdl_pipeline_v12.1.0/wdl/inputs/fastq2ubam/fastq2ubams_ITCCP4/$dir$sample
         output_file=/hpc/pmc_kool/fvalzano/wdl_pipeline_v12.1.0/wdl/inputs/fastq2ubam/fastq2ubams_ITCCP4/$dir$sample/fastq_ubam_workflow_fv.inputs.json
+        # Create json content, this is the standard form, without the sample specific info that you will have to enter manually
         json_content='{
     "MultiFastqUbamWorkflow.image_picard_digest": "docker.io/princessmaximacenter/picard@sha256:d561453a4a25dfac7933ec2237259d1c5adc974287cc639418bd3c2af9881019",
     "MultiFastqUbamWorkflow.sample_details": [

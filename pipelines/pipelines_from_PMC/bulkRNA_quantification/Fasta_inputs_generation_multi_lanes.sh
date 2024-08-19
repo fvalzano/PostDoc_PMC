@@ -3,7 +3,7 @@
 #To merge the fastq files use
 #In this specific case the sequencing runs on multiple lanes are the following: ITCC-P4_MB0072/Fastq/pr01-f01-r01, ITCC-P4_MB0646/Fastq/pp01-f01-r01 & ITCC-P4_MB0646/Fastq/tp01-f01-r01
 
-# Navigate to the PMC_MB directory
+# Navigate to the directory one level above the directory containing the Fastq files
 multiple_lane_sample='ITCC-P4_MB0646'
 file='Fastq'
 subdir='tp01-f01-r01'
@@ -35,7 +35,10 @@ cd /hpc/pmc_kool/ITCCP4/PMC_MB/${multiple_lane_sample}/${file}/${subdir}
                     fi
                 done
             done
+# Create directories for each samples - change at need in your favourite directory
 mkdir -p "/hpc/pmc_kool/fvalzano/wdl_pipeline_v12.1.0/wdl/inputs/fasta_inputs/${multiple_lane_sample}/${subdir}"
+# Transfer the newly generated fasta in your favourite directory
 scp "${sample}.fasta.inputs" "/hpc/pmc_kool/fvalzano/wdl_pipeline_v12.1.0/wdl/inputs/fasta_inputs/${multiple_lane_sample}/${subdir}"
+# Clean up - we don't want same files all over the places :)
 rm "${sample}.fasta.inputs"
 

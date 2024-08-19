@@ -4,6 +4,7 @@ for dir in */; do
     for sample in `ls`; do
         mkdir -p /hpc/pmc_kool/fvalzano/wdl_pipeline_v12.1.0/wdl/inputs/ubam2counts/ubam2counts_ITCCP4/$dir$sample
         output_file=/hpc/pmc_kool/fvalzano/wdl_pipeline_v12.1.0/wdl/inputs/ubam2counts/ubam2counts_ITCCP4/$dir$sample/rna_fusions_germline_snv_inputs_no_molgenis_fv.json
+        # Create json content, this is the standard form, without the sample specific info that you will have to enter manually
         json_content='{
   "rnafusion.ApplyBQSR_RNA.emit_oq_flag": "true",
   "rnafusion.ApplyBQSR_RNA.sequence_group_interval": null,
