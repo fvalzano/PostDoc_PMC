@@ -2,10 +2,10 @@ library(enrichR)
 library(clusterProfiler)
 library(ggplot2)
 #Load the list of significant DEG per comparison, we will focus for now on all the single comparisons against empty-cag as well as MDG vs MD plasmids
-MYCN_vs_EMPTY_signif = read.csv2("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/Atamian/DESEQ2_Analysis/DESeq2_MYCN_MYCN-DNTP53_MYCN-DNTP53-GLI2/MYCN_vs_EMPTY.csv")
-MYCN_DNTP53_vs_EMPTY_signif = read.csv2("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/Atamian/DESEQ2_Analysis/DESeq2_MYCN_MYCN-DNTP53_MYCN-DNTP53-GLI2/MYCN_DNTP53_vs_EMPTY.csv")
-MYCN_DNTP53_GLI2_vs_EMPTY_signif = read.csv2("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/Atamian/DESEQ2_Analysis/DESeq2_MYCN_MYCN-DNTP53_MYCN-DNTP53-GLI2/MYCN_DNTP53_GLI2_vs_EMPTY.csv")
-MYCN_DNTP53_GLI2_vs_MYCN.DNTP53_signif = read.csv2("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/Atamian/DESEQ2_Analysis/DESeq2_MYCN_MYCN-DNTP53_MYCN-DNTP53-GLI2/MYCN_DNTP53_GLI2_vs_MYCN.DNTP53.csv")
+MYCN_vs_EMPTY_signif = read.csv2("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/MYCN_vs_EMPTY.csv")
+MYCN_DNTP53_vs_EMPTY_signif = read.csv2("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/MYCN_DNTP53_vs_EMPTY.csv")
+MYCN_DNTP53_GLI2_vs_EMPTY_signif = read.csv2("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/MYCN_DNTP53_GLI2_vs_EMPTY.csv")
+MYCN_DNTP53_GLI2_vs_MYCN.DNTP53_signif = read.csv2("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/MYCN_DNTP53_GLI2_vs_MYCN.DNTP53.csv")
 #Load all the databases from EnrichR
 dbs_tot <- listEnrichrDbs()
 #Focus on "GO_Biological_Process_2023", "GO_Molecular_Function_2023","KEGG_2021_Human" and "DisGeNET"
@@ -29,7 +29,7 @@ MD_vs_MDG = enrichr(MYCN_DNTP53_GLI2_vs_MYCN.DNTP53_signif[MYCN_DNTP53_GLI2_vs_M
 MDG_vs_MD_DGN_top20 = head(MDG_vs_MD$DisGeNET, n = 20)
 MDG_vs_MD_DGN_top20 = MDG_vs_MD_DGN_top20[order(MDG_vs_MD_DGN_top20$Adjusted.P.value, decreasing = F),]
 #Plot the Enrichment results as a barplot
-pdf("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/Atamian/DESEQ2_Analysis/DESeq2_MYCN_MYCN-DNTP53_MYCN-DNTP53-GLI2/Plots/Enrichment_barplot_MDGvsMD_DisGeNET.pdf", height= 7.5, width = 12.5)
+pdf("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/Plots/Enrichment_barplot_MDGvsMD_DisGeNET.pdf", height= 7.5, width = 12.5)
 ggplot(MDG_vs_MD_DGN_top20, aes(x = -log10(MDG_vs_MD_DGN_top20[,"Adjusted.P.value"]), y = MDG_vs_MD_DGN_top20[,"Term"], fill = MDG_vs_MD_DGN_top20$Adjusted.P.value))+
         geom_bar(stat="identity")+
         scale_y_discrete(limits = rev(MDG_vs_MD_DGN_top20$Term))+
@@ -50,7 +50,7 @@ MB_enriched_genes = MDG_vs_MD_DGN_top20[MDG_vs_MD_DGN_top20$Term =="Childhood Me
 MB_enriched_genes = strsplit(MB_enriched_genes, ";")
 MB_enriched_genes = MB_enriched_genes[[1]]
 #Load the vst normalized merged counts  
-Bulk_RNA_vst = read.csv2("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/Atamian/DESEQ2_Analysis/DESeq2_MYCN_MYCN-DNTP53_MYCN-DNTP53-GLI2/Bulk_RNA_merge_vst_Normalized.csv")
+Bulk_RNA_vst = read.csv2("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/Bulk_RNA_merge_vst_Normalized.csv")
 #Subset the general counts for the genes of interest(GOI)
 Bulk_RNA_vst_subset = Bulk_RNA_vst[Bulk_RNA_vst$X %in% MB_enriched_genes,]
 rownames(Bulk_RNA_vst_subset) = Bulk_RNA_vst_subset$X
@@ -70,7 +70,7 @@ for(i in rownames(Bulk_RNA_vst_subset)){
                                         "MYCN_DNTP53", 
                                         "MYCN_DNTP53_GLI2", 
                                         "EMPTY")
-        pdf(paste0("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/Atamian/DESEQ2_Analysis/DESeq2_MYCN_MYCN-DNTP53_MYCN-DNTP53-GLI2/Plots/",i, "_Boxplot.pdf"), width = 5, height = 5)
+        pdf(paste0("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/Plots/",i, "_Boxplot.pdf"), width = 5, height = 5)
         p = ggplot(Bulk_RNA_vst_subset_genes, aes(x = Bulk_RNA_vst_subset_genes$grouping, y = Bulk_RNA_vst_subset_genes$value))+
                 geom_boxplot(aes(fill = Bulk_RNA_vst_subset_genes$grouping))+
                 geom_jitter(width = 0, size = 2.5)+
@@ -87,7 +87,7 @@ for(i in rownames(Bulk_RNA_vst_subset)){
 }
 
 #Focus on the MDG comparison - are genes related to specific pathways in developing CB reflected in this setting?
-Bulk_RNA_vst = read.csv2("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/Atamian/DESEQ2_Analysis/DESeq2_MYCN_MYCN-DNTP53_MYCN-DNTP53-GLI2/Bulk_RNA_merge_vst_Normalized.csv")
+Bulk_RNA_vst = read.csv2("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/Bulk_RNA_merge_vst_Normalized.csv")
 #List of genes from PMC10924233 figure 5
 Developmental_genes = c("PAX6","ZIC1","ZIC2","PCNA","MK167","DLGAPS","CCND1","NEUROD1","NEUROD2","CNTN1","CNTN2","UNCSC","EOMES","CALB2","GRM1","TBR1","GLI1","GLI2","GLI3","PTCH1")
 #Subset the general counts for the genes of interest(GOI)
@@ -117,7 +117,7 @@ anno_row=data.frame(c("Early and proliferating GCP",
 #Adapt row and colnames
 rownames(anno_row) = rownames(Bulk_RNA_vst_subset)
 colnames(anno_row) = "annotation"
-pdf("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/Atamian/DESEQ2_Analysis/DESeq2_MYCN_MYCN-DNTP53_MYCN-DNTP53-GLI2/Plots/Heatmap_Cerebellar_Genes.pdf", width = 7.5, height = 7.5)
+pdf("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/Plots/Heatmap_Cerebellar_Genes.pdf", width = 7.5, height = 7.5)
 pheatmap(Bulk_RNA_vst_subset, 
          scale= "row", 
          cluster_rows=T, 
