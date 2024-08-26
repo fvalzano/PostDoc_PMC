@@ -92,13 +92,8 @@ for (i in filenames) {
   seurat_objects[[i]]$nFeature.thr = isOutlier(seurat_objects[[i]]$nFeature_RNA, nmads=3, type="both", log=FALSE)
    seurat_objects[[i]]$nCount.thr = isOutlier(seurat_objects[[i]]$nCount_RNA, nmads=3, type="higher", log=FALSE)
    seurat_objects[[i]] <- seurat_objects[[i]][,!(seurat_objects[[i]]$nCount.thr |  seurat_objects[[i]]$nFeature.thr)]
-   seurat_objects[[i]] = subset(seurat_objects[[i]], subset = percent.mt <5 &
+   qc_seurat_objects[[i]] = subset(seurat_objects[[i]], subset = percent.mt <5 &
                                   percent.ribo<5)
-  qc_seurat_objects[[i]] = subset(seurat_objects[[i]], subset = nFeature_RNA>min.nFeature.thr & 
-                                 nFeature_RNA<max.nFeature.thr & 
-                                 nCount_RNA<max.nCount.thr & 
-                                 percent.mt<5 &
-                                 percent.ribo<5)
 }
 rm(seurat_objects)
 
