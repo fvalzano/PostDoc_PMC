@@ -87,13 +87,13 @@ rm(seurat_objects)
 seurat_objects=qc_seurat_objects
 seurat_objects_first = seurat_objects[[1]]
 seurat_objects[[1]] = NULL
-seurat_objects =  merge(x = seurat_objects_first, y= c(seurat_objects), merge.data = TRUE, project = "MIMIC") 
+seurat_objects =  merge(x = seurat_objects_first, y= c(seurat_objects), merge.data = TRUE, project = "Ep") 
 #Perform SCT normalization and then calculate cellcycle scoring, after that, rerun SCT regressing out the cell cycle Phase
 seurat_objects = SCTransform(seurat_objects, vars.to.regress = c("percent.mt", "percent.ribo"), vst.flavor = "v2", assay = "RNA")
 seurat_objects= CellCycleScoring(seurat_objects, s.features = cc.genes.updated.2019$s.genes, g2m.features = cc.genes.updated.2019$g2m.genes, assay = 'SCT')
 seurat_objects = SCTransform(seurat_objects, vars.to.regress = c("percent.mt", "percent.ribo", 'S.Score', 'G2M.Score'), vst.flavor = "v2", assay = "RNA")
 #Perform dimensionality reduction on unintegrated object
-scrna_ep<-RunPCA (seurat_objects, verbose = FALSE)
+scrna_ep<-RunPCA(seurat_objects, verbose = FALSE)
 scrna_ep <- FindNeighbors(object = scrna_ep, reduction = "pca", dims = 1:30)
 scrna_ep = RunUMAP(scrna_ep, reduction = "pca", dims = 1:30, reduction.name = "umap")
 i = seq(0.2, 1, by = 0.2)
