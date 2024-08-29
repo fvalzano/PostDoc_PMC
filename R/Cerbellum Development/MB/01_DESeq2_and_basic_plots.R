@@ -401,3 +401,9 @@ ggplot(Bulk_RNA_merge_subset_melt, aes(x = Bulk_RNA_merge_subset_melt$grouping, 
           title = element_text(size = 10),
           legend.title=element_blank())
 dev.off()
+
+pdf("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/DESeq2_MYCN_MYCN-DNTP53_MYCN-DNTP53-GLI2/Plots/PCA.pdf", width = 7.5, height = 7.5)
+dds_vst = vst(dds, blind=FALSE)
+plotPCA(dds_vst, intgroup=c("condition", "state")) +
+       theme_bw()
+dev.off()
