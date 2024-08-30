@@ -98,7 +98,7 @@ MYCN_vs_EMPTY$gene = rownames(MYCN_vs_EMPTY)
 #Add colors
 MYCN_vs_EMPTY$cols = ifelse(MYCN_vs_EMPTY$log2FoldChange> 0.75 & MYCN_vs_EMPTY$padj<=0.05, "upregulated", 
                      ifelse(MYCN_vs_EMPTY$log2FoldChange< -0.75 & MYCN_vs_EMPTY$padj<=0.05, "downregulated", "ns"))
-pdf(paste0("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/Plots/", Plotting_directory, "MYCN_Volcano.pdf"), width = 7.5, height = 7.5)
+pdf(paste0("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/DESeq2_MYCN_MYCN-DNTP53_MYCN-DNTP53-GLI2/Plots/", Plotting_directory, "MYCN_Volcano.pdf"), width = 7.5, height = 7.5)
 ggplot(MYCN_vs_EMPTY, aes(x= MYCN_vs_EMPTY$log2FoldChange, y = -log10(MYCN_vs_EMPTY$padj), colour = MYCN_vs_EMPTY$cols))+
     geom_point(aes(size = 2.5))+
     xlim(-5,5)+
@@ -130,7 +130,7 @@ Bulk_RNA_vst_MYCN_Empty = Bulk_RNA_vst[,c("CB2402.03.mix.1.MYCN","CB2402.03.mix.
 MYCN_vs_EMPTY_signif = read.csv2("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/MYCN_vs_EMPTY.csv")
 Bulk_RNA_vst_MYCN_Empty = Bulk_RNA_vst_MYCN_Empty[rownames(Bulk_RNA_vst_MYCN_Empty)%in% MYCN_vs_EMPTY_signif$X,]
 #Plot
-pdf(paste0("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/Plots/", Plotting_directory, "top10_DEG_MYCN.pdf"), width = 7.5, height = 7.5)
+pdf(paste0("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/DESeq2_MYCN_MYCN-DNTP53_MYCN-DNTP53-GLI2/Plots/", Plotting_directory, "top10_DEG_MYCN.pdf"), width = 7.5, height = 7.5)
 pheatmap(Bulk_RNA_vst_MYCN_Empty, cluster_row = T, scale = "row",fontsize = 15)
 dev.off()
 #MYCN-DTP53_vs_EMPTY
@@ -147,7 +147,7 @@ MYCN_DNTP53_vs_EMPTY$gene = rownames(MYCN_DNTP53_vs_EMPTY)
 #Add colors
 MYCN_DNTP53_vs_EMPTY$cols = ifelse(MYCN_DNTP53_vs_EMPTY$log2FoldChange> 0.75 & MYCN_DNTP53_vs_EMPTY$padj<=0.05, "upregulated", 
                      ifelse(MYCN_DNTP53_vs_EMPTY$log2FoldChange< -0.75 & MYCN_DNTP53_vs_EMPTY$padj<=0.05, "downregulated", "ns"))
-pdf(paste0("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/Plots/", Plotting_directory, "MYCN_DNTP53_Volcano.pdf"), width = 7.5, height = 7.5)
+pdf(paste0("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/DESeq2_MYCN_MYCN-DNTP53_MYCN-DNTP53-GLI2/Plots/", Plotting_directory, "MYCN_DNTP53_Volcano.pdf"), width = 7.5, height = 7.5)
 ggplot(MYCN_DNTP53_vs_EMPTY, aes(x= MYCN_DNTP53_vs_EMPTY$log2FoldChange, y = -log10(MYCN_DNTP53_vs_EMPTY$padj), colour = MYCN_DNTP53_vs_EMPTY$cols))+
     geom_point(aes(size = 2.5))+
     xlim(-7.5,7.5)+
@@ -183,7 +183,7 @@ MYCN_DNTP53_vs_EMPTY_signif = MYCN_DNTP53_vs_EMPTY_signif[order(MYCN_DNTP53_vs_E
 MYCN_DNTP53_vs_EMPTY_subset = rbind(head(MYCN_DNTP53_vs_EMPTY_signif, n = 10), tail(MYCN_DNTP53_vs_EMPTY_signif, n = 10))
 #Filter the merged bulk for interesting samples with the genes contained in the DEG subset
 Bulk_RNA_vst_MYCN_DNTP53_Empty = Bulk_RNA_vst_MYCN_DNTP53_Empty[rownames(Bulk_RNA_vst_MYCN_DNTP53_Empty)%in% MYCN_DNTP53_vs_EMPTY_subset$X,]
-pdf(paste0("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/Plots/", Plotting_directory, "top10_DEG_MYCN_DNTP53.pdf"), width = 7.5, height = 7.5)
+pdf(paste0("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/DESeq2_MYCN_MYCN-DNTP53_MYCN-DNTP53-GLI2/Plots/", Plotting_directory, "top10_DEG_MYCN_DNTP53.pdf"), width = 7.5, height = 7.5)
 pheatmap(Bulk_RNA_vst_MYCN_DNTP53_Empty, cluster_row = T, scale = "row",fontsize = 15)
 dev.off()
 #MYCN-DTP53-GLI2_vs_EMPTY
@@ -200,7 +200,7 @@ MYCN_DNTP53_GLI2_vs_EMPTY$gene = rownames(MYCN_DNTP53_GLI2_vs_EMPTY)
 #Add colors
 MYCN_DNTP53_GLI2_vs_EMPTY$cols = ifelse(MYCN_DNTP53_GLI2_vs_EMPTY$log2FoldChange> 0.75 & MYCN_DNTP53_GLI2_vs_EMPTY$padj<=0.05, "upregulated", 
                      ifelse(MYCN_DNTP53_GLI2_vs_EMPTY$log2FoldChange< -0.75 & MYCN_DNTP53_GLI2_vs_EMPTY$padj<=0.05, "downregulated", "ns"))
-pdf(paste0("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/Plots/", Plotting_directory, "MYCN_DNTP53_GLI2_Volcano.pdf"), width = 7.5, height = 7.5)
+pdf(paste0("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/DESeq2_MYCN_MYCN-DNTP53_MYCN-DNTP53-GLI2/Plots/", Plotting_directory, "MYCN_DNTP53_GLI2_Volcano.pdf"), width = 7.5, height = 7.5)
 ggplot(MYCN_DNTP53_GLI2_vs_EMPTY, aes(x= MYCN_DNTP53_GLI2_vs_EMPTY$log2FoldChange, y = -log10(MYCN_DNTP53_GLI2_vs_EMPTY$padj), colour = MYCN_DNTP53_GLI2_vs_EMPTY$cols))+
     geom_point(aes(size = 2.5))+
     #geom_text_repel(label = MYCN_DNTP53_GLI2_vs_EMPTY$label, nudge_y = 0.1, colour = "black", box.padding = 0.3, point.padding = 0.2, direction = "both")+
@@ -237,7 +237,7 @@ MYCN_DNTP53_GLI2_vs_EMPTY_signif = MYCN_DNTP53_GLI2_vs_EMPTY_signif[order(MYCN_D
 MYCN_DNTP53_GLI2_vs_EMPTY_subset = rbind(head(MYCN_DNTP53_GLI2_vs_EMPTY_signif, n = 10), tail(MYCN_DNTP53_GLI2_vs_EMPTY_signif, n = 10))
 #Filter the merged bulk for interesting samples with the genes contained in the DEG subset
 Bulk_RNA_vst_MYCN_DNTP53_GLI2_Empty = Bulk_RNA_vst_MYCN_DNTP53_GLI2_Empty[rownames(Bulk_RNA_vst_MYCN_DNTP53_GLI2_Empty)%in% MYCN_DNTP53_GLI2_vs_EMPTY_subset$X,]
-pdf(paste0("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/Plots/", Plotting_directory, "top10_DEG_MYCN_DNTP53_GLI2.pdf"), width = 7.5, height = 8)
+pdf(paste0("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/DESeq2_MYCN_MYCN-DNTP53_MYCN-DNTP53-GLI2/Plots/", Plotting_directory, "top10_DEG_MYCN_DNTP53_GLI2.pdf"), width = 7.5, height = 8)
 pheatmap(Bulk_RNA_vst_MYCN_DNTP53_GLI2_Empty, cluster_row = T, scale = "row",fontsize = 15)
 dev.off()
 
@@ -268,7 +268,7 @@ MYCN_DNTP53_GLI2_vs_MYCN.DNTP53$gene = rownames(MYCN_DNTP53_GLI2_vs_MYCN.DNTP53)
 #Add colors
 MYCN_DNTP53_GLI2_vs_MYCN.DNTP53$cols = ifelse(MYCN_DNTP53_GLI2_vs_MYCN.DNTP53$log2FoldChange> 0.75 & MYCN_DNTP53_GLI2_vs_MYCN.DNTP53$padj<=0.05, "upregulated", 
                      ifelse(MYCN_DNTP53_GLI2_vs_MYCN.DNTP53$log2FoldChange< -0.75 & MYCN_DNTP53_GLI2_vs_MYCN.DNTP53$padj<=0.05, "downregulated", "ns"))
-pdf(paste0("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/Plots/", Plotting_directory, "MYCN_DNTP53_GLI2_vs_MYCN_DNTP53_Volcano.pdf"), width = 7.5, height = 7.5)
+pdf(paste0("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/DESeq2_MYCN_MYCN-DNTP53_MYCN-DNTP53-GLI2/Plots/", Plotting_directory, "MYCN_DNTP53_GLI2_vs_MYCN_DNTP53_Volcano.pdf"), width = 7.5, height = 7.5)
 ggplot(MYCN_DNTP53_GLI2_vs_MYCN.DNTP53, aes(x= MYCN_DNTP53_GLI2_vs_MYCN.DNTP53$log2FoldChange, y = -log10(MYCN_DNTP53_GLI2_vs_MYCN.DNTP53$padj), colour = MYCN_DNTP53_GLI2_vs_MYCN.DNTP53$cols))+
     geom_point(aes(size = 2.5))+
     xlim(-10,10)+
@@ -304,7 +304,7 @@ MYCN_DNTP53_GLI2_vs_MYCN.DNTP53_signif = MYCN_DNTP53_GLI2_vs_MYCN.DNTP53_signif[
 Bulk_RNA_vst_MDvsMDG_subset = rbind(head(MYCN_DNTP53_GLI2_vs_MYCN.DNTP53_signif, n = 10), tail(MYCN_DNTP53_GLI2_vs_MYCN.DNTP53_signif, n = 10))
 #Filter the merged bulk for interesting samples with the genes contained in the DEG subset
 Bulk_RNA_vst_MDvsMDG = Bulk_RNA_vst_MDvsMDG[rownames(Bulk_RNA_vst_MDvsMDG)%in% Bulk_RNA_vst_MDvsMDG_subset$X,]
-pdf(paste0("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/Plots/", Plotting_directory, "top10_DEG_MYCN_DNTP53_GLI2vsMYCN_DNTP53.pdf"), width = 7.5, height = 8)
+pdf(paste0("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/DESeq2_MYCN_MYCN-DNTP53_MYCN-DNTP53-GLI2/Plots/", Plotting_directory, "top10_DEG_MYCN_DNTP53_GLI2vsMYCN_DNTP53.pdf"), width = 7.5, height = 8)
 pheatmap(Bulk_RNA_vst_MDvsMDG, cluster_row = T, scale = "row",fontsize = 15)
 dev.off()
 
@@ -314,11 +314,11 @@ Bulk_RNA_vst = assay(dds_vst)
 write.csv2(Bulk_RNA_vst, "/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/Bulk_RNA_merge_vst_Normalized.csv")
 #Heatmap - subset all the GOI together and plot
 Bulk_RNA_merge_subset = Bulk_RNA_vst[rownames(Bulk_RNA_vst) %in% c("MYCN", "TP53", "GLI2"),]
-pdf(paste0("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/Plots/", Plotting_directory, "Heatmap_NormCounts.pdf"), width = 7.5, height = 5)
+pdf(paste0("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/DESeq2_MYCN_MYCN-DNTP53_MYCN-DNTP53-GLI2/Plots/", Plotting_directory, "Heatmap_NormCounts.pdf"), width = 7.5, height = 5)
 pheatmap(Bulk_RNA_merge_subset, scale = "none", cluster_row = F, cluster_cols = T)
 dev.off()
 #Boxplot_MYCN
-pdf(paste0("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/Plots/", Plotting_directory, "MYCN_NormCounts_Box.pdf"), width = 7.5, height = 7.5)
+pdf(paste0("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/DESeq2_MYCN_MYCN-DNTP53_MYCN-DNTP53-GLI2/Plots/", Plotting_directory, "MYCN_NormCounts_Box.pdf"), width = 7.5, height = 7.5)
 #Subset GOI singularly
 Bulk_RNA_merge_subset = Bulk_RNA_vst[rownames(Bulk_RNA_vst) %in% "MYCN",]
 Bulk_RNA_merge_subset_melt = reshape2::melt(Bulk_RNA_merge_subset)
@@ -346,7 +346,7 @@ ggplot(Bulk_RNA_merge_subset_melt, aes(x = Bulk_RNA_merge_subset_melt$grouping, 
           legend.title=element_blank())
 dev.off()
 #Boxplot_TP53
-pdf(paste0("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/Plots/", Plotting_directory, "TP53_NormCounts_Box.pdf"), width = 7.5, height = 7.5)
+pdf(paste0("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/DESeq2_MYCN_MYCN-DNTP53_MYCN-DNTP53-GLI2/Plots/", Plotting_directory, "TP53_NormCounts_Box.pdf"), width = 7.5, height = 7.5)
 #Subset GOI singularly
 Bulk_RNA_merge_subset = Bulk_RNA_vst[rownames(Bulk_RNA_vst) %in% "TP53",]
 Bulk_RNA_merge_subset_melt = reshape2::melt(Bulk_RNA_merge_subset)
@@ -374,7 +374,7 @@ ggplot(Bulk_RNA_merge_subset_melt, aes(x = Bulk_RNA_merge_subset_melt$grouping, 
           legend.title=element_blank())
 dev.off()
 #Boxplot_GLI2
-pdf(paste0("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/Plots/", Plotting_directory, "GLI2_NormCounts_Box.pdf"), width = 7.5, height = 7.5)
+pdf(paste0("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/DESeq2_MYCN_MYCN-DNTP53_MYCN-DNTP53-GLI2/Plots/", Plotting_directory, "GLI2_NormCounts_Box.pdf"), width = 7.5, height = 7.5)
 #Subset GOI singularly
 Bulk_RNA_merge_subset = Bulk_RNA_vst[rownames(Bulk_RNA_vst) %in% "GLI2",]
 Bulk_RNA_merge_subset_melt = reshape2::melt(Bulk_RNA_merge_subset)
