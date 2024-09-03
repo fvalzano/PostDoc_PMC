@@ -92,7 +92,7 @@ MYCN_vs_EMPTY = as.data.frame(resLFC)
 #Filter significant terms for exporting 
 MYCN_vs_EMPTY_signif = MYCN_vs_EMPTY[MYCN_vs_EMPTY$padj<=0.05,]
 MYCN_vs_EMPTY_signif = na.omit(MYCN_vs_EMPTY_signif)
-write.csv2(MYCN_vs_EMPTY_signif, "/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/MYCN_vs_EMPTY.csv")
+write.csv2(MYCN_vs_EMPTY_signif, "/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/DESeq2_MYCN_MYCN-DNTP53_MYCN-DNTP53-GLI2/MYCN_vs_EMPTY.csv")
 #Visualize the results via volcano plot
 MYCN_vs_EMPTY$gene = rownames(MYCN_vs_EMPTY)
 #Add colors
@@ -127,7 +127,7 @@ Bulk_RNA_vst = as.data.frame(assay(dds_vst))
 #Filter for samples of interest
 Bulk_RNA_vst_MYCN_Empty = Bulk_RNA_vst[,c("CB2402.03.mix.1.MYCN","CB2402.03.mix.8.empty.cag.ig","CB2410.11.mix.1.MYCN","CB2410.11.mix.8.empty.cag.ig","CB2412.13.mix.8.empty.cag.ig")]
 #Filter for genes of interest (in this case we have very little genes, so we will use them all)
-MYCN_vs_EMPTY_signif = read.csv2("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/MYCN_vs_EMPTY.csv")
+MYCN_vs_EMPTY_signif = read.csv2("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/DESeq2_MYCN_MYCN-DNTP53_MYCN-DNTP53-GLI2/MYCN_vs_EMPTY.csv")
 Bulk_RNA_vst_MYCN_Empty = Bulk_RNA_vst_MYCN_Empty[rownames(Bulk_RNA_vst_MYCN_Empty)%in% MYCN_vs_EMPTY_signif$X,]
 #Plot
 pdf(paste0("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/DESeq2_MYCN_MYCN-DNTP53_MYCN-DNTP53-GLI2/Plots/", Plotting_directory, "top10_DEG_MYCN.pdf"), width = 7.5, height = 7.5)
@@ -141,7 +141,7 @@ MYCN_DNTP53_vs_EMPTY = as.data.frame(resLFC)
 #Filter significant terms for exporting 
 MYCN_DNTP53_vs_EMPTY_signif = MYCN_DNTP53_vs_EMPTY[MYCN_DNTP53_vs_EMPTY$padj<=0.05,]
 MYCN_DNTP53_vs_EMPTY_signif = na.omit(MYCN_DNTP53_vs_EMPTY_signif)
-write.csv2(MYCN_DNTP53_vs_EMPTY_signif, "/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/MYCN_DNTP53_vs_EMPTY.csv")
+write.csv2(MYCN_DNTP53_vs_EMPTY_signif, "/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/DESeq2_MYCN_MYCN-DNTP53_MYCN-DNTP53-GLI2/MYCN_DNTP53_vs_EMPTY.csv")
 #Visualize the results via volcano plot
 MYCN_DNTP53_vs_EMPTY$gene = rownames(MYCN_DNTP53_vs_EMPTY)
 #Add colors
@@ -176,7 +176,7 @@ Bulk_RNA_vst = as.data.frame(assay(dds_vst))
 #Filter for samples of interest
 Bulk_RNA_vst_MYCN_DNTP53_Empty = Bulk_RNA_vst[,c("CB2402.03.mix.2.MYCN.DNTP53","CB2402.03.mix.8.empty.cag.ig","CB2410.11.mix.2.MYCN.DNTP53","CB2410.11.mix.8.empty.cag.ig","CB2412.13.mix.2.MYCN.DNTP53","CB2412.13.mix.8.empty.cag.ig"),]
 #Filter for genes of interest (we use the top10 DEG in both direction)
-MYCN_DNTP53_vs_EMPTY_signif = read.csv2("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/MYCN_DNTP53_vs_EMPTY.csv")
+MYCN_DNTP53_vs_EMPTY_signif = read.csv2("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/DESeq2_MYCN_MYCN-DNTP53_MYCN-DNTP53-GLI2/MYCN_DNTP53_vs_EMPTY.csv")
 #Order terms in decreasing order
 MYCN_DNTP53_vs_EMPTY_signif = MYCN_DNTP53_vs_EMPTY_signif[order(MYCN_DNTP53_vs_EMPTY_signif$log2FoldChange, decreasing = T),]
 #Create DEG subset containing top 10 terms in both directions
@@ -194,7 +194,7 @@ MYCN_DNTP53_GLI2_vs_EMPTY = as.data.frame(resLFC)
 #Filter significant terms for exporting 
 MYCN_DNTP53_GLI2_vs_EMPTY_signif = MYCN_DNTP53_GLI2_vs_EMPTY[MYCN_DNTP53_GLI2_vs_EMPTY$padj<=0.05,]
 MYCN_DNTP53_GLI2_vs_EMPTY_signif = na.omit(MYCN_DNTP53_GLI2_vs_EMPTY_signif)
-write.csv2(MYCN_DNTP53_GLI2_vs_EMPTY_signif, "/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/MYCN_DNTP53_GLI2_vs_EMPTY.csv")
+write.csv2(MYCN_DNTP53_GLI2_vs_EMPTY_signif, "/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/DESeq2_MYCN_MYCN-DNTP53_MYCN-DNTP53-GLI2/MYCN_DNTP53_GLI2_vs_EMPTY.csv")
 #Visualize the results via volcano plot
 MYCN_DNTP53_GLI2_vs_EMPTY$gene = rownames(MYCN_DNTP53_GLI2_vs_EMPTY)
 #Add colors
@@ -230,7 +230,7 @@ Bulk_RNA_vst = as.data.frame(assay(dds_vst))
 #Filter for samples of interest
 Bulk_RNA_vst_MYCN_DNTP53_GLI2_Empty = Bulk_RNA_vst[,c("CB2402.03.mix.6.MYCN.DNTP53.GLI2","CB2402.03.mix.8.empty.cag.ig","CB2410.11.mix.6.MYCN.DNTP53.GLI2","CB2410.11.mix.8.empty.cag.ig","CB2412.13.mix.6.MYCN.DNTP53.GLI2","CB2412.13.mix.8.empty.cag.ig"),]
 #Filter for genes of interest (we use the top10 DEG in both direction)
-MYCN_DNTP53_GLI2_vs_EMPTY_signif = read.csv2("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/MYCN_DNTP53_GLI2_vs_EMPTY.csv")
+MYCN_DNTP53_GLI2_vs_EMPTY_signif = read.csv2("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/DESeq2_MYCN_MYCN-DNTP53_MYCN-DNTP53-GLI2/MYCN_DNTP53_GLI2_vs_EMPTY.csv")
 #Order terms in decreasing order
 MYCN_DNTP53_GLI2_vs_EMPTY_signif = MYCN_DNTP53_GLI2_vs_EMPTY_signif[order(MYCN_DNTP53_GLI2_vs_EMPTY_signif$log2FoldChange, decreasing = T),]
 #Create DEG subset containing top 10 terms in both directions
@@ -262,7 +262,7 @@ MYCN_DNTP53_GLI2_vs_MYCN.DNTP53 = as.data.frame(resLFC)
 #Filter significant terms for exporting 
 MYCN_DNTP53_GLI2_vs_MYCN.DNTP53_signif = MYCN_DNTP53_GLI2_vs_MYCN.DNTP53[MYCN_DNTP53_GLI2_vs_MYCN.DNTP53$padj<=0.05,]
 MYCN_DNTP53_GLI2_vs_MYCN.DNTP53_signif = na.omit(MYCN_DNTP53_GLI2_vs_MYCN.DNTP53_signif)
-write.csv2(MYCN_DNTP53_GLI2_vs_MYCN.DNTP53_signif, "/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/MYCN_DNTP53_GLI2_vs_MYCN.DNTP53.csv")
+write.csv2(MYCN_DNTP53_GLI2_vs_MYCN.DNTP53_signif, "/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/DESeq2_MYCN_MYCN-DNTP53_MYCN-DNTP53-GLI2/MYCN_DNTP53_GLI2_vs_MYCN.DNTP53.csv")
 #Visualize the results via volcano plot
 MYCN_DNTP53_GLI2_vs_MYCN.DNTP53$gene = rownames(MYCN_DNTP53_GLI2_vs_MYCN.DNTP53)
 #Add colors
@@ -297,7 +297,7 @@ Bulk_RNA_vst = as.data.frame(assay(dds_vst))
 #Filter for samples of interest
 Bulk_RNA_vst_MDvsMDG = Bulk_RNA_vst[,c("CB2402.03.mix.2.MYCN.DNTP53","CB2402.03.mix.6.MYCN.DNTP53.GLI2","CB2410.11.mix.2.MYCN.DNTP53","CB2410.11.mix.6.MYCN.DNTP53.GLI2","CB2412.13.mix.2.MYCN.DNTP53","CB2412.13.mix.6.MYCN.DNTP53.GLI2")]
 #Filter for genes of interest (we use the top10 DEG in both direction)
-MYCN_DNTP53_GLI2_vs_MYCN.DNTP53_signif = read.csv2("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/MYCN_DNTP53_GLI2_vs_MYCN.DNTP53.csv")
+MYCN_DNTP53_GLI2_vs_MYCN.DNTP53_signif = read.csv2("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/DESeq2_MYCN_MYCN-DNTP53_MYCN-DNTP53-GLI2/MYCN_DNTP53_GLI2_vs_MYCN.DNTP53.csv")
 #Order terms in decreasing order
 MYCN_DNTP53_GLI2_vs_MYCN.DNTP53_signif = MYCN_DNTP53_GLI2_vs_MYCN.DNTP53_signif[order(MYCN_DNTP53_GLI2_vs_MYCN.DNTP53_signif$log2FoldChange, decreasing = T),]
 #Create DEG subset containing top 10 terms in both directions
