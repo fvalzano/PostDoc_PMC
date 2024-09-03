@@ -151,7 +151,7 @@ pdf(paste0("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_A
 ggplot(MYCN_DNTP53_vs_EMPTY, aes(x= MYCN_DNTP53_vs_EMPTY$log2FoldChange, y = -log10(MYCN_DNTP53_vs_EMPTY$padj), colour = MYCN_DNTP53_vs_EMPTY$cols))+
     geom_point(aes(size = 2.5))+
     xlim(-7.5,7.5)+
-    ylim(0,max(MYCN_DNTP53_vs_EMPTY$padj)+1)+
+    ylim(0,max(-log10(MYCN_DNTP53_vs_EMPTY$padj))+1)+
     geom_hline(yintercept = 1.3, linetype = "dashed")+
     geom_vline(xintercept = c(-0.75, +0.75), linetype = "dashed")+
     theme_bw()+
@@ -205,7 +205,7 @@ ggplot(MYCN_DNTP53_GLI2_vs_EMPTY, aes(x= MYCN_DNTP53_GLI2_vs_EMPTY$log2FoldChang
     geom_point(aes(size = 2.5))+
     #geom_text_repel(label = MYCN_DNTP53_GLI2_vs_EMPTY$label, nudge_y = 0.1, colour = "black", box.padding = 0.3, point.padding = 0.2, direction = "both")+
     xlim(-10,10)+
-    ylim(0,max(MYCN_DNTP53_GLI2_vs_EMPTY$padj)+1)+
+    ylim(0,max(-log10(MYCN_DNTP53_GLI2_vs_EMPTY$padj))+1)+
     geom_hline(yintercept = 1.3, linetype = "dashed")+
     geom_vline(xintercept = c(-0.75, +0.75), linetype = "dashed")+
     theme_bw()+
@@ -272,7 +272,7 @@ pdf(paste0("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_A
 ggplot(MYCN_DNTP53_GLI2_vs_MYCN.DNTP53, aes(x= MYCN_DNTP53_GLI2_vs_MYCN.DNTP53$log2FoldChange, y = -log10(MYCN_DNTP53_GLI2_vs_MYCN.DNTP53$padj), colour = MYCN_DNTP53_GLI2_vs_MYCN.DNTP53$cols))+
     geom_point(aes(size = 2.5))+
     xlim(-10,10)+
-    ylim(0,max(MYCN_DNTP53_GLI2_vs_MYCN.DNTP53$padj)+1)+
+    ylim(0,max(-log10(MYCN_DNTP53_GLI2_vs_MYCN.DNTP53$padj))+1)+
     geom_hline(yintercept = 1.3, linetype = "dashed")+
     geom_vline(xintercept = c(-0.75, +0.75), linetype = "dashed")+
     theme_bw()+
