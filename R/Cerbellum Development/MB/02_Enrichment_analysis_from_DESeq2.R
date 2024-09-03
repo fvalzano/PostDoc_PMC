@@ -1,11 +1,13 @@
 library(enrichR)
 library(clusterProfiler)
 library(ggplot2)
+library(dplyr)
+Plotting_directory = ""
 #Load the list of significant DEG per comparison, we will focus for now on all the single comparisons against empty-cag as well as MDG vs MD plasmids
-MYCN_vs_EMPTY_signif = read.csv2("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/MYCN_vs_EMPTY.csv")
-MYCN_DNTP53_vs_EMPTY_signif = read.csv2("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/MYCN_DNTP53_vs_EMPTY.csv")
-MYCN_DNTP53_GLI2_vs_EMPTY_signif = read.csv2("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/MYCN_DNTP53_GLI2_vs_EMPTY.csv")
-MYCN_DNTP53_GLI2_vs_MYCN.DNTP53_signif = read.csv2("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/MYCN_DNTP53_GLI2_vs_MYCN.DNTP53.csv")
+MYCN_vs_EMPTY_signif = read.csv2("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/DESeq2_MYCN_MYCN-DNTP53_MYCN-DNTP53-GLI2/MYCN_vs_EMPTY.csv")
+MYCN_DNTP53_vs_EMPTY_signif = read.csv2("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/DESeq2_MYCN_MYCN-DNTP53_MYCN-DNTP53-GLI2/MYCN_DNTP53_vs_EMPTY.csv")
+MYCN_DNTP53_GLI2_vs_EMPTY_signif = read.csv2("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/DESeq2_MYCN_MYCN-DNTP53_MYCN-DNTP53-GLI2/MYCN_DNTP53_GLI2_vs_EMPTY.csv")
+MYCN_DNTP53_GLI2_vs_MYCN.DNTP53_signif = read.csv2("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/DESeq2_MYCN_MYCN-DNTP53_MYCN-DNTP53-GLI2/MYCN_DNTP53_GLI2_vs_MYCN.DNTP53.csv")
 #Load all the databases from EnrichR
 dbs_tot <- listEnrichrDbs()
 #Focus on "GO_Biological_Process_2023", "GO_Molecular_Function_2023","KEGG_2021_Human" and "DisGeNET"
@@ -26,10 +28,10 @@ MD_vs_MDG = enrichr(MYCN_DNTP53_GLI2_vs_MYCN.DNTP53_signif[MYCN_DNTP53_GLI2_vs_M
 
 #The enrichment analysis performed on MDG_vs_MD with DisGeNET gave Childhood MB as significant result - maybe the triple combination is leading to a more
 #MB like progression in the chrisganoids? 
-MDG_vs_MD_DGN_top20 = head(MDG_vs_MD$DisGeNET, n = 20)
+MDG_vs_MD_DGN_top20 = head(MDG_vs_MD$DisGeNET, n = 10)
 MDG_vs_MD_DGN_top20 = MDG_vs_MD_DGN_top20[order(MDG_vs_MD_DGN_top20$Adjusted.P.value, decreasing = F),]
 #Plot the Enrichment results as a barplot
-pdf("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/Plots/Enrichment_barplot_MDGvsMD_DisGeNET.pdf", height= 7.5, width = 12.5)
+pdf(paste0("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/DESeq2_MYCN_MYCN-DNTP53_MYCN-DNTP53-GLI2/Plots/", Plotting_directory,"Enrichment_barplot_MDGvsMD_DisGeNET.pdf"), height= 7.5, width = 12.5)
 ggplot(MDG_vs_MD_DGN_top20, aes(x = -log10(MDG_vs_MD_DGN_top20[,"Adjusted.P.value"]), y = MDG_vs_MD_DGN_top20[,"Term"], fill = MDG_vs_MD_DGN_top20$Adjusted.P.value))+
         geom_bar(stat="identity")+
         scale_y_discrete(limits = rev(MDG_vs_MD_DGN_top20$Term))+
@@ -39,7 +41,7 @@ ggplot(MDG_vs_MD_DGN_top20, aes(x = -log10(MDG_vs_MD_DGN_top20[,"Adjusted.P.valu
         xlab("Significance")+
         ylab("DisGeNET_Term")+
         theme(axis.text.x=element_text(size = 10),
-              axis.text.y=element_text(size = 10),
+              axis.text.y=element_text(size = 15),
               axis.title = element_text(size = 20))
 dev.off()
 
@@ -70,7 +72,7 @@ for(i in rownames(Bulk_RNA_vst_subset)){
                                         "MYCN_DNTP53", 
                                         "MYCN_DNTP53_GLI2", 
                                         "EMPTY")
-        pdf(paste0("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/Plots/",i, "_Boxplot.pdf"), width = 5, height = 5)
+        pdf(paste0("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/DESeq2_MYCN_MYCN-DNTP53_MYCN-DNTP53-GLI2/Plots/",Plotting_directory,i, "_Boxplot.pdf"), width = 5, height = 5)
         p = ggplot(Bulk_RNA_vst_subset_genes, aes(x = Bulk_RNA_vst_subset_genes$grouping, y = Bulk_RNA_vst_subset_genes$value))+
                 geom_boxplot(aes(fill = Bulk_RNA_vst_subset_genes$grouping))+
                 geom_jitter(width = 0, size = 2.5)+
@@ -86,6 +88,38 @@ for(i in rownames(Bulk_RNA_vst_subset)){
         dev.off()
 }
 
+#Plot GOI as dotplot in the single conditions
+Bulk_RNA_vst_subset_genes = Bulk_RNA_vst_subset[rownames(Bulk_RNA_vst_subset) %in% rownames(Bulk_RNA_vst_subset),]
+Bulk_RNA_vst_subset_genes = reshape2::melt(Bulk_RNA_vst_subset_genes)
+Bulk_RNA_vst_subset_genes$grouping = rep(c("MYCN", 
+                                        "MYCN_DNTP53", 
+                                        "MYCN_DNTP53_GLI2", 
+                                        "EMPTY",
+                                        "MYCN", 
+                                        "MYCN_DNTP53", 
+                                        "MYCN_DNTP53_GLI2", 
+                                        "EMPTY",
+                                        "MYCN_DNTP53", 
+                                        "MYCN_DNTP53_GLI2", 
+                                        "EMPTY"), each = 8)
+Bulk_RNA_vst_subset_genes$genes = rep(c("NTN1", "GLI2", "BMP7", "CDK6", "PTCH2", "ERBB2", "EGFR", "PTCH1"))
+average_counts <- Bulk_RNA_vst_subset_genes %>%
+  group_by(grouping, genes) %>%
+  summarize(average_value = median(value, na.rm = TRUE)) %>%
+  ungroup()
+
+pdf(paste0("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/DESeq2_MYCN_MYCN-DNTP53_MYCN-DNTP53-GLI2/Plots/",Plotting_directory,"Connected_scatter.pdf"), width = 5, height = 5)
+ggplot(average_counts, aes(x = average_counts$grouping, y = average_counts$average_value))+
+        geom_point(aes(size = 1, colour = factor(average_counts$genes)))+
+        scale_size(c(1,5))+
+        geom_line(aes(group = average_counts$genes, colour = factor(average_counts$genes)))+
+        theme_bw() +
+        xlab("")+
+        ylab("Median Normalized Counts")+
+        theme(axis.text.x = element_text(size = 10, angle = 45, hjust = 1),
+                        axis.text.y = element_text(size = 10),
+                        title = element_text(size = 10))
+dev.off()
 #Focus on the MDG comparison - are genes related to specific pathways in developing CB reflected in this setting?
 Bulk_RNA_vst = read.csv2("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/Bulk_RNA_merge_vst_Normalized.csv")
 #List of genes from PMC10924233 figure 5
