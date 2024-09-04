@@ -4,7 +4,7 @@ library(readxl)
 library(stringr)
 library(dplyr)
 library(ggplot2)
-
+Plotting_directory = "HD_Poster/"
 Bulk_RNA_files=list()
 Bulk_RNA_files = list.files("/hpc/pmc_kool/fvalzano/pipelines_fv_output/Data_fetching/Requests/20240829_Chris")
 #Read the bulkRNA seq runs
@@ -84,7 +84,8 @@ dds_vst = vst(dds, blind=FALSE)
 MDG_vs_MD = read.csv2("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/DESeq2_MYCN_MYCN-DNTP53_MYCN-DNTP53-GLI2/MYCN_DNTP53_GLI2_vs_MYCN.DNTP53.csv")
 MDG_pattern = MDG_vs_MD[order(MDG_vs_MD$log2FoldChange, decreasing = T),]
 MDG_pattern_top = MDG_pattern
-dds_vst_subset = dds_vst[rownames(dds_vst) %in% c("PTCH1", "PTCH2", "CDK6", "NTN1", "EGFR", "ERBB2", "GLI2", "BMP7"),]
+#From the genes popping out from the enrichment analysis, only PTCH1, EGFR and GLI2 are significant in the comparison between MDG vs E
+dds_vst_subset = dds_vst[rownames(dds_vst) %in% c("PTCH1", "EGFR", "GLI2"),]
 Bulk_RNA_vst = as.data.frame(assay(dds_vst_subset))
 Bulk_RNA_vst = as.data.frame(Bulk_RNA_vst)
 
@@ -92,6 +93,6 @@ annotation = PMCID_Subgroup_ordered
 annotation$'RNAseq Patient Biomaterial' = NULL
 rownames(annotation) = annotation$PMCID
 annotation$PMCID = NULL
-pdf(paste0("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/DESeq2_MYCN_MYCN-DNTP53_MYCN-DNTP53-GLI2/Plots/", Plotting_directory, "Overlay_patients_Heatmap.pdf"), height = 5, width = 7.5)
-pheatmap(Bulk_RNA_vst, scale = "row", annotation = annotation, cluster_row = T, cluster_col = T)
+pdf(paste0("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/DESeq2_MYCN_MYCN-DNTP53_MYCN-DNTP53-GLI2/Plots/", Plotting_directory, "Overlay_patients_Heatmap_sub.pdf"), height = 2.5, width = 7.5)
+pheatmap(Bulk_RNA_vst, scale = "none", annotation = annotation, cluster_row = T, cluster_col = T, show_colnames = F)
 dev.off()
