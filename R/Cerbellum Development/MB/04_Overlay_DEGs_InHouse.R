@@ -94,5 +94,27 @@ annotation$'RNAseq Patient Biomaterial' = NULL
 rownames(annotation) = annotation$PMCID
 annotation$PMCID = NULL
 pdf(paste0("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/DESeq2_MYCN_MYCN-DNTP53_MYCN-DNTP53-GLI2/Plots/", Plotting_directory, "Overlay_patients_Heatmap_sub.pdf"), height = 2.5, width = 7.5)
-pheatmap(Bulk_RNA_vst, scale = "none", annotation = annotation, cluster_row = T, cluster_col = T, show_colnames = F)
+pheatmap(Bulk_RNA_vst, scale = "none", annotation = annotation, cluster_row = T, cluster_col = T, show_colnames = F, color=colorRampPalette(c("white", "pink", "red"))(100))
+dev.off()
+
+
+#To broaden our overview, we need to focus not only on the subset of genes
+#coming from the enrichment analysis. This was a good first hint but we need
+#to broaden the analysis. In order to do so, we concatenated the two DEG analysis
+#performed on MDG. Genes present in MDGvsMD will give us GOI different in the two models
+#MDGvsE will give us genes differentially expressed from the "healthy" ctrl.
+#Load the two DEG analysis
+MDG_vs_MD = read.csv2("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/DESeq2_MYCN_MYCN-DNTP53_MYCN-DNTP53-GLI2/MYCN_DNTP53_GLI2_vs_MYCN.DNTP53.csv")
+MDG_vs_E = read.csv2("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/DESeq2_MYCN_MYCN-DNTP53_MYCN-DNTP53-GLI2/MYCN_DNTP53_GLI2_vs_EMPTY.csv")
+#Combine the two DEGs to have a combo DEG with only genes present in the two
+MDG_combo_genes = MDG_vs_E[MDG_vs_E$X %in% MDG_vs_MD$X,]
+#Select upregulated genes in MDG
+MDG_pattern = MDG_combo_genes[order(MDG_combo_genes$log2FoldChange, decreasing = T),]
+MDG_pattern_onlypos = MDG_pattern[MDG_pattern$log2FoldChange>0,]$X
+#Plot heatmap of the genes upregulated on patients data
+dds_vst_subset = dds_vst[rownames(dds_vst) %in% MDG_pattern_onlypos,]
+Bulk_RNA_vst = as.data.frame(assay(dds_vst_subset))
+Bulk_RNA_vst = as.data.frame(Bulk_RNA_vst)
+pdf(paste0("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Cerebellum_Development/DESEQ2_Analysis/DESeq2_MYCN_MYCN-DNTP53_MYCN-DNTP53-GLI2/Plots/", Plotting_directory, "Overlay_patients_Heatmap_MDG_unique_upregulated.pdf"), height = 20, width = 12.5)
+pheatmap(Bulk_RNA_vst, scale = "row", annotation = annotation, cluster_row = T, cluster_col = T, show_colnames = F, color=colorRampPalette(c("blue", "white", "red"))(100))
 dev.off()
