@@ -88,7 +88,7 @@ for(i in rownames(Bulk_RNA_vst_subset)){
         dev.off()
 }
 
-#Plot GOI as dotplot in the single conditions
+#Plot GOI as connected scatterplot in the single conditions
 Bulk_RNA_vst_subset_genes = Bulk_RNA_vst_subset[rownames(Bulk_RNA_vst_subset) %in% rownames(Bulk_RNA_vst_subset),]
 Bulk_RNA_vst_subset_genes = reshape2::melt(Bulk_RNA_vst_subset_genes)
 Bulk_RNA_vst_subset_genes$grouping = rep(c("MYCN", 
