@@ -1,9 +1,7 @@
-cd /hpc/pmc_kool/fvalzano/wdl_pipeline_v12.1.0/wdl/inputs/fasta_inputs
-for dir in */; do
-    cd $dir
-    for sample in `ls`; do
-        mkdir -p /hpc/pmc_kool/fvalzano/wdl_pipeline_v12.1.0/wdl/inputs/ubam2counts/ubam2counts_ITCCP4/$dir$sample
-        output_file=/hpc/pmc_kool/fvalzano/wdl_pipeline_v12.1.0/wdl/inputs/ubam2counts/ubam2counts_ITCCP4/$dir$sample/rna_fusions_germline_snv_inputs_no_molgenis_fv.json
+cd /hpc/pmc_kool/fvalzano/wdl_pipeline_v12.1.0/wdl/inputs/fasta_inputs/AZ/
+for sample in `ls`; do
+        mkdir -p /hpc/pmc_kool/fvalzano/wdl_pipeline_v12.1.0/wdl/inputs/ubam2counts/ubam2counts_AZ/$sample
+        output_file=/hpc/pmc_kool/fvalzano/wdl_pipeline_v12.1.0/wdl/inputs/ubam2counts/ubam2counts_AZ/$sample/rna_fusions_germline_snv_inputs_no_molgenis_fv.json
         # Create json content, this is the standard form, without the sample specific info that you will have to enter manually
         json_content='{
   "rnafusion.ApplyBQSR_RNA.emit_oq_flag": "true",
@@ -139,6 +137,5 @@ for dir in */; do
 
         # Write the JSON content to the file
         echo "$json_content" > "$output_file"
-    done
     cd ..
 done

@@ -11,16 +11,11 @@
 
 #This outputs the directory names to feed in the subsequent loop of submission to the CaaS
 directories=()
-cd /hpc/pmc_kool/fvalzano/wdl_pipeline_v12.1.0/wdl/inputs/fastq2ubam/fastq2ubams_ITCCP4
+cd /hpc/pmc_kool/fvalzano/wdl_pipeline_v12.1.0/wdl/inputs/fastq2ubam/fastq2ubams_AZ
 for dir in */; do
-    cd $dir
-        for sample in `ls`; do
-        cd $sample
-        directories+=("$(pwd)")
-        cd ..
-        done 
-    cd ..
-done
+    # Add the full path of each directory to the 'directories' array
+    directories+=("$(pwd)/${dir}")
+done 
 
 cd /hpc/pmc_kool/fvalzano/wdl_pipeline_v12.1.0/cromwell
 workflow_source='/hpc/pmc_kool/fvalzano/wdl_pipeline_v12.1.0/wdl/multi_fastq_ubam_workflow.wdl'
