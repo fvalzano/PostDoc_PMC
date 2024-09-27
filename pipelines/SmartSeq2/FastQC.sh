@@ -9,7 +9,7 @@
 #SBATCH -o /hpc/pmc_kool/fvalzano/Ependymoma_Filbin/model_ss2/log.out
 #SBATCH --job-name=Filbin_fastqc
 
-BASE_DIR=/hpc/pmc_kool/fvalzano/Ependymoma_Filbin/model_ss2/
+BASE_DIR=/hpc/pmc_kool/fvalzano/Ependymoma_Filbin/model_ss2/fastq/
 OUTPUT_DIR=/hpc/pmc_kool/fvalzano/Ependymoma_Filbin/model_ss2/fastqc_reports
 mkdir -p $OUTPUT_DIR
 

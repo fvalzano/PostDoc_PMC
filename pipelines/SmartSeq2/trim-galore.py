@@ -3,7 +3,7 @@ import os
 import subprocess
 
 # Define the base directory containing FASTQ files in subdirectories
-base_dir = "/hpc/pmc_kool/fvalzano/Ependymoma_Filbin/model_ss2/"
+base_dir = "/hpc/pmc_kool/fvalzano/Ependymoma_Filbin/model_ss2/fastq"
 
 # Define the output directory for trimmed FASTQ files
 output_dir = "/hpc/pmc_kool/fvalzano/Ependymoma_Filbin/model_ss2/trimmed_fastq"
