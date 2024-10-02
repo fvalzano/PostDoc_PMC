@@ -19,5 +19,5 @@ module load R/4.3.0
 Rscript /hpc/pmc_kool/fvalzano/PostDoc_PMC/pipelines/DESeq2/DESeq2.R
 
 cd /hpc/pmc_kool/fvalzano/PostDoc_PMC/pipelines/DESeq2
-mkdir -p /hpc/pmc_kool/fvalzano/PostDoc_PMC/pipelines/DESeq2/Script_copies/Requests/$Output_folder
-cp DESeq2.R "/hpc/pmc_kool/fvalzano/PostDoc_PMC/pipelines/DESeq2/Script_copies/Requests/$Output_folder/DESeq2.R"
+mkdir -p /hpc/pmc_kool/fvalzano/pipelines_fv_output/DESeq2/Script_copies/Requests/$Output_folder
+cp DESeq2.R "/hpc/pmc_kool/fvalzano/pipelines_fv_output/DESeq2/Script_copies/Requests/$Output_folder/DESeq2.R"
