@@ -12,42 +12,41 @@ module use --append /hpc/local/CentOS7/pmc_research/etc/modulefiles
 module load STAR
 
 # Define base directory and output directories
-BASE_DIR="/hpc/pmc_kool/fvalzano/Ependymoma_Filbin/model_ss2/fastq"
-MERGED_DIR="/hpc/pmc_kool/fvalzano/Ependymoma_Filbin/model_ss2/merged_fq"
-STAR_OUTPUT_DIR="/hpc/pmc_kool/fvalzano/Ependymoma_Filbin/model_ss2/star_alignments"
-
-# Create output directories if they don't exist
-mkdir -p $MERGED_DIR
-mkdir -p $STAR_OUTPUT_DIR
-# Path to the STAR genome directory (index generated with STAR)
-GENOME_DIR="/hpc/pmc_kool/fvalzano/Ref_genome_star/star/"
-
-# Define the number of threads for STAR
-THREADS=8
-
-# Loop through unique sample names
-# Assuming file names follow the pattern: <sample_name>_A01_R1.fastq.gz, <sample_name>_A01_R2.fastq.gz, etc.
-for file in $(ls ${BASE_DIR}); do
-    cd $file
-    for sample in $(ls ${BASE_DIR}/${file} | grep -o '^[^-]*-[^-]*' | sort -u); do
-        echo "Processing sample: $sample"
-
-        # Merge R1 files across lanes
-        cat $(ls $BASE_DIR/$file/${sample}*_R1.fastq.gz) > $MERGED_DIR/${sample}_merged_R1.fastq.gz
-        # Merge R2 files across lanes
-        cat $(ls $BASE_DIR/$file/${sample}*_R2.fastq.gz) > $MERGED_DIR/${sample}_merged_R2.fastq.gz
-
-        # Run STAR alignment
-        echo "Running STAR alignment for $sample..."
-        STAR --genomeDir $GENOME_DIR \
-             --readFilesIn $MERGED_DIR/${sample}_merged_R1.fastq.gz $MERGED_DIR/${sample}_merged_R2.fastq.gz \
-             --readFilesCommand zcat \
-             --runThreadN $THREADS \
-             --outFileNamePrefix $STAR_OUTPUT_DIR/${sample}_ \
-             --outSAMtype BAM SortedByCoordinate
-
-        echo "STAR alignment completed for $sample."
-    cd ..
-    done
+FASTQ_DIR="/hpc/pmc_kool/fvalzano/Ependymoma_Filbin/model_ss2/fastq"
+OUTPUT_DIR="/hpc/pmc_kool/fvalzano/Ependymoma_Filbin/model_ss2/star_alignments"
+GENOME_DIR=/hpc/pmc_kool/fvalzano/Ref_genome_star/star         # Path to the directory where the STAR genome index is stored
+THREADS=8                              # Number of threads to use for STAR alignment
+SHORT_CELL_IDS=()
+CELL_IDS=()
+for FILE in ${FASTQ_DIR}/*/*_R1.fastq.gz; do
+    # Extract the base name (e.g., 210FH-P2-A01_R1_trimmed.fq.gz)
+    BASENAME=$(basename "$FILE")
+    # Remove the '_R1.fastq.gz' suffix to get the ID (e.g., 210FH-P2-A01)
+    CELL_ID=$(echo "$BASENAME" | sed 's/_R1.fastq.gz//')
+    CELL_IDS+=("$CELL_ID")
 done
-echo "All samples processed."
+# Loop through each cell and run STAR alignment
+
+for CELL in "${CELL_IDS[@]}"; do
+        # Define input FASTQ files
+        FASTQ_R1="${FASTQ_DIR}/*/${CELL}_R1.fastq.gz"
+        FASTQ_R2="${FASTQ_DIR}/*/${CELL}_R2.fastq.gz"
+    
+        # Define output directory for each cell
+        CELL_OUTPUT_DIR="${OUTPUT_DIR}/${CELL}"
+        mkdir -p ${CELL_OUTPUT_DIR}
+    
+        # Run STAR alignment in TranscriptomeSAM mode - as we will use subread to count the features
+        STAR --runThreadN ${THREADS} \
+             --genomeDir ${GENOME_DIR} \
+             --readFilesIn ${FASTQ_R1} ${FASTQ_R2} \
+             --readFilesCommand zcat \
+             --outFileNamePrefix ${CELL_OUTPUT_DIR}/${CELL}_ \
+             --outSAMtype BAM Unsorted \
+             --quantMode TranscriptomeSAM \
+             --outSAMunmapped Within \
+             --outSAMattributes Standard
+
+        echo "Alignment completed for ${CELL}"
+    done
+echo "All alignments are completed!"
