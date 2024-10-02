@@ -1,7 +1,6 @@
 Workflow for smart seq2 analysis:
 
-Fastq -> FastQC -> MultiQC  -> STAR  -> featureCounts -> counts matrix
-      -> Trim_galore -> FastQC_post_trimming -> MultiQC_post_trimming  -> STAR  -> featureCounts -> counts matrix      
+Fastq -> (Trim_galore) -> FastQC -> MultiQC  -> STAR  -> Sorting -> featureCounts -> counts matrix
 
 FastQC -> /hpc/local/CentOS7/pmc_research/etc/modulefiles
 STAR -> /hpc/local/CentOS7/pmc_research/etc/modulefiles
