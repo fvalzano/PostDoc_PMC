@@ -1,6 +1,7 @@
 # General Overview of the folder
 This folder contains collections of codes free to use within the PMC_Kool group.
 
+SCRIPT_DIR=${YourFavouriteDirectory}
 
 
 Data_fetching: Contains pipeline to fetch bulk RNAsequencing runs from the bioinformatic server of the PMC, it is semi automated, the only thing to be changed are the PMCID of the given samples you want to retrieve in the R script ID_conversion.R (code line 10) and the date and requester in the Data_fetching.sh job script (code line 14 to 16).
@@ -17,27 +18,27 @@ pipelines_from_PMC:
     bulkRNA_quantification: Contains scripts to use PMC pipelines for bulkRNA sequencing
         
     Barcode input search:
-            bash Barcodes_search.sh
+            bash ${SCRIPT_DIR}/Barcodes_search.sh
     Fasta inputs generation script for sequencing performed on multiple lanes:
-            bash Fasta_inputs_generation_multi_lanes.sh
+            bash ${SCRIPT_DIR}/Fasta_inputs_generation_multi_lanes.sh
     Fasta inputs generation script for sequencing performed on single lane
-            bash Fasta_inputs_generation_single_lane:.sh
+            bash ${SCRIPT_DIR}/Fasta_inputs_generation_single_lane:.sh
     Json file generation script for converting fastq to ubam format:
-            bash Fastq_ubam_workflow_fv_inputs_json_generation.sh
+            bash ${SCRIPT_DIR}/Fastq_ubam_workflow_fv_inputs_json_generation.sh
     Json file generation script for converting ubam to counts format:
-            bash Rna_fusions_germline_snv_inputs_no_molgenis_fv_generation.sh
+            bash ${SCRIPT_DIR}/Rna_fusions_germline_snv_inputs_no_molgenis_fv_generation.sh
         
 ## Subfolders:
     ITCCP4: Contains scripts used for analysis of the ITCCP4 samples with PMC pipelines for bulkRNA sequencing:
     Script for converting fastq to ubam format, looped for several samples:
-            bash run_fastq_ubam_workflow_fv_looped.sh
+            bash ${SCRIPT_DIR}/run_fastq_ubam_workflow_fv_looped.sh
     Script for converting ubam to counts, looped for several samples
-            bash run_rna_fusion_workflow_fv_looped.sh
+            bash ${SCRIPT_DIR}/run_rna_fusion_workflow_fv_looped.sh
     AZ: Contains scripts used for analysis of the AZ samples with PMC pipelines for bulkRNA sequencing:
     Script for converting fastq to ubam format, looped for several samples:
-            bash run_fastq_ubam_workflow_fv_looped.sh
+            bash ${SCRIPT_DIR}/run_fastq_ubam_workflow_fv_looped.sh
     Script for converting ubam to counts, looped for several samples
-            bash run_rna_fusion_workflow_fv_looped.sh
+            bash ${SCRIPT_DIR}/run_rna_fusion_workflow_fv_looped.sh
 ...
 
 Main contributors:
