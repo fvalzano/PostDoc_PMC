@@ -1,4 +1,3 @@
-#before executing this script, activate the ss2 environment cntaining multiqc -> conda activate ss2
 import os
 import subprocess
 
@@ -10,18 +9,33 @@ output_dir = "/hpc/pmc_kool/fvalzano/Ependymoma_Filbin/model_ss2/trimmed_fastq"
 os.makedirs(output_dir, exist_ok=True)
 
 # Walk through the base directory and find all FASTQ files
+fastq_pairs = {}
 for root, dirs, files in os.walk(base_dir):
     for file in files:
         if file.endswith(".fastq.gz"):
-            fastq_file = os.path.join(root, file)
-            print(f"Running Trim Galore on {fastq_file}...")
-            
-            # Run Trim Galore
-            subprocess.run([
-                            "trim_galore", 
-                            fastq_file, 
-                            "-o", 
-                            output_dir
-            ])
+            # Identify if the file is R1 or R2
+            if "_R1.fastq.gz" in file:
+                sample_name = file.replace("_R1.fastq.gz", "")
+                fastq_pairs.setdefault(sample_name, {})['R1'] = os.path.join(root, file)
+            elif "_R2.fastq.gz" in file:
+                sample_name = file.replace("_R2.fastq.gz", "")
+                fastq_pairs.setdefault(sample_name, {})['R2'] = os.path.join(root, file)
 
-print("Trim Galore analysis completed for all FASTQ files.")
+# Run Trim Galore on paired-end FASTQ files
+for sample, fastq_files in fastq_pairs.items():
+    if 'R1' in fastq_files and 'R2' in fastq_files:
+        r1_fastq = fastq_files['R1']
+        r2_fastq = fastq_files['R2']
+        print(f"Running Trim Galore on paired files: {r1_fastq} and {r2_fastq}...")
+
+        # Run Trim Galore for paired-end reads
+        subprocess.run([
+                        "trim_galore", 
+                        "--paired", 
+                        r1_fastq, 
+                        r2_fastq, 
+                        "-o", 
+                        output_dir
+        ])
+
+print("Trim Galore analysis completed for all paired-end FASTQ files.")
