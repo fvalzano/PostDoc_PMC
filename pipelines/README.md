@@ -1,6 +1,6 @@
 # General Overview of the folder
 This folder contains collections of codes free to use within the PMC_Kool group.
-It is a continuous Work In Progress, therefore, feedback is highly appreciated :)
+
 
 
 Data_fetching: Contains pipeline to fetch bulk RNAsequencing runs from the bioinformatic server of the PMC, it is semi automated, the only thing to be changed are the PMCID of the given samples you want to retrieve in the R script ID_conversion.R (code line 10) and the date and requester in the Data_fetching.sh job script (code line 14 to 16).
@@ -22,7 +22,9 @@ pipelines_from_PMC:
         ITCCP4: Contains scripts used for analysis of the ITCCP4 samples with PMC pipelines for bulkRNA sequencing:
             run_fastq_ubam_workflow_fv_looped.sh: script for converting fastq to ubam format, looped for several samples
             run_rna_fusion_workflow_fv_looped.sh: script for converting ubam to counts, looped for several samples
-
+        AZ: Contains scripts used for analysis of the AZ samples with PMC pipelines for bulkRNA sequencing:
+            run_fastq_ubam_workflow_fv_looped.sh: script for converting fastq to ubam format, looped for several samples
+            run_rna_fusion_workflow_fv_looped.sh: script for converting ubam to counts, looped for several samples
 ...
 
 Main contributors:

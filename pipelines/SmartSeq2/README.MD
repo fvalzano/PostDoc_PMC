@@ -1,9 +1,5 @@
-Workflow for smart seq2 analysis:
-
+This folder contains script to perform SmartSeq2 sequencing analysis of single cell plate sorted.
+The overall workflow is:
 Fastq -> (Trim_galore) -> FastQC -> MultiQC  -> STAR  -> Sorting -> featureCounts -> counts matrix
 
-FastQC -> /hpc/local/CentOS7/pmc_research/etc/modulefiles
-STAR -> /hpc/local/CentOS7/pmc_research/etc/modulefiles
-subread -> /hpc/local/CentOS7/pmc_research/etc/modulefiles
-MultiQC -> /hpc/local/Rocky8/pmc_kool/miniconda3/envs/ss2
-Trim-galore -> /hpc/local/Rocky8/pmc_kool/miniconda3/envs/ss2
+The modules and softwares to perform the analysis are deposited in the PMC module directories (CentOS7), MultiQC and Trim galore are deposited in the ss2 environment in the shared space of the group.
