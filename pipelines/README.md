@@ -14,17 +14,37 @@ remapping: Contains all the necessary elements to perform alignment of single ce
 
 pipelines_from_PMC:
     bulkRNA_quantification: Contains scripts to use PMC pipelines for bulkRNA sequencing
-        Barcodes_search.sh: Barcode input search
-        Fasta_inputs_generation_multi_lanes: Fasta inputs generation script for sequencing performed on multiple lanes
-        Fasta_inputs_generation_single_lane: Fasta inputs generation script for sequencing performed on single lane
-        Fastq_ubam_workflow_fv_inputs_json_generation.sh: Json file generation script for converting fastq to ubam format
-        Rna_fusions_germline_snv_inputs_no_molgenis_fv_generation.sh: Json file generation script for converting ubam to counts format
-        ITCCP4: Contains scripts used for analysis of the ITCCP4 samples with PMC pipelines for bulkRNA sequencing:
-            run_fastq_ubam_workflow_fv_looped.sh: script for converting fastq to ubam format, looped for several samples
-            run_rna_fusion_workflow_fv_looped.sh: script for converting ubam to counts, looped for several samples
-        AZ: Contains scripts used for analysis of the AZ samples with PMC pipelines for bulkRNA sequencing:
-            run_fastq_ubam_workflow_fv_looped.sh: script for converting fastq to ubam format, looped for several samples
-            run_rna_fusion_workflow_fv_looped.sh: script for converting ubam to counts, looped for several samples
+        Barcode input search:
+            
+            bash Barcodes_search.sh
+        Fasta inputs generation script for sequencing performed on multiple lanes:
+            
+            bash Fasta_inputs_generation_multi_lanes.sh
+        Fasta inputs generation script for sequencing performed on single lane
+            
+            bash Fasta_inputs_generation_single_lane:.sh
+        Json file generation script for converting fastq to ubam format:
+
+            bash Fastq_ubam_workflow_fv_inputs_json_generation.sh
+        Json file generation script for converting ubam to counts format:
+
+            bash Rna_fusions_germline_snv_inputs_no_molgenis_fv_generation.sh
+        
+## Subfolders:
+    ITCCP4: Contains scripts used for analysis of the ITCCP4 samples with PMC pipelines for bulkRNA sequencing:
+        Script for converting fastq to ubam format, looped for several samples:
+
+            bash run_fastq_ubam_workflow_fv_looped.sh
+        Script for converting ubam to counts, looped for several samples
+
+            bash run_rna_fusion_workflow_fv_looped.sh
+    AZ: Contains scripts used for analysis of the AZ samples with PMC pipelines for bulkRNA sequencing:
+        Script for converting fastq to ubam format, looped for several samples:
+
+            bash run_fastq_ubam_workflow_fv_looped.sh
+        Script for converting ubam to counts, looped for several samples
+
+            bash run_rna_fusion_workflow_fv_looped.sh
 ...
 
 Main contributors:

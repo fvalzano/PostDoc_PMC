@@ -1,3 +1,5 @@
+# Overview of the folder
+
 This folder contains script to perform SmartSeq2 sequencing analysis of single cell plate sorted.
 The overall workflow is:
 Fastq -> (Trim_galore) -> FastQC -> MultiQC  -> STAR  -> Sorting -> featureCounts -> counts matrix
