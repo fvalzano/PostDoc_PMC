@@ -21,7 +21,7 @@ SORTED_BAM_DIR="/hpc/pmc_kool/fvalzano/Ependymoma_Filbin/model_ss2/sorted_bam"
 mkdir -p $SORTED_BAM_DIR
 
 # Loop through all BAM files in the STAR output directory
-for bam_file in ${BAM_DIR}/*/*.bam; do
+for bam_file in ${BAM_DIR}/*/*_Aligned.toTranscriptome.out.bam; do
     sample_name=$(basename $bam_file _Aligned.out.bam)  # Extract sample name from BAM filename
     echo "Sorting BAM file by name: $sample_name"
 
