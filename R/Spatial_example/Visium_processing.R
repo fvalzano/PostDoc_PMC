@@ -4,7 +4,10 @@ library(patchwork)
 library(dplyr)
 library(SeuratWrappers)
 
-scrna_visium <- Load10X_Spatial(data.dir = "/hpc/pmc_kool/fvalzano/Rstudio_Test1/Data_examples/Visium_HD/Mouse_brain/10x/", bin.size = c(8, 16))
+#Input data directory
+data_dir="/hpc/pmc_kool/fvalzano/Rstudio_Test1/Data_examples/Visium_HD/Mouse_brain/10x/"
+plotting_dir="/hpc/pmc_kool/fvalzano/Rstudio_Test1/Data_examples/Plots/Test_plots.pdf"
+scrna_visium <- Load10X_Spatial(data.dir = data_dir, bin.size = c(8, 16))
 
 # Setting default assay changes between 8um and 16um binning
 Assays(scrna_visium)
@@ -26,7 +29,7 @@ DefaultAssay(scrna_visium) <- "Spatial.016um"
 scrna_visium <- NormalizeData(scrna_visium)
 
 # Test plotting
-pdf("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Data_examples/Plots/Test_plots.pdf", width = 500, height = 500)
+pdf(plotting_dir, width = 500, height = 500)
 DefaultAssay(scrna_visium) <- "Spatial.016um"
 SpatialFeaturePlot(scrna_visium, features = "Hpca") + ggtitle("Hpca expression (16um)")
 # switch back to 8um

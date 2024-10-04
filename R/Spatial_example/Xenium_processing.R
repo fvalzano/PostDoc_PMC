@@ -7,9 +7,9 @@ library(future)
 #plan("multisession", workers = 10)
 library(ggplot2)
 
-path <- "/hpc/pmc_kool/fvalzano/Rstudio_Test1/Data_examples/Xenium"
+data_dir <- "/hpc/pmc_kool/fvalzano/Rstudio_Test1/Data_examples/Xenium"
 # Load the Xenium data
-xenium.obj <- LoadXenium(path, fov = "fov")
+xenium.obj <- LoadXenium(data_dir, fov = "fov")
 # remove cells with 0 counts
 xenium.obj <- subset(xenium.obj, subset = nCount_Xenium > 0)
 #Visualize data
