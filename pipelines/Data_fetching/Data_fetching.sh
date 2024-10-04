@@ -45,5 +45,6 @@ done < "$RNAseq_Relapse_Biomaterial_input_file"
 #wget -m -r -nd -np -P "/hpc/pmc_kool/fvalzano/pipelines_fv_output/Data_fetching/Requests/$Output_folder" --user fvalzano --password Brindisi.2021 -e robots=off "https://files.bioinf.prinsesmaximacentrum.nl/shares/PMCLAB2020-142/" --accept=${label}*gene_id.exon.counts.txt
 #done < "$RNAseq_Tumoroid_Biomaterial_input_file"
 
-mkdir -p /hpc/pmc_kool/fvalzano/PostDoc_PMC/pipelines/Data_fetching/Script_copies/Requests/$Output_folder
-cp "$0" "/hpc/pmc_kool/fvalzano/PostDoc_PMC/pipelines/Data_fetching/Script_copies/Requests/$Output_folder/$(basename "$0")"
+#Create a copy of the script to save offline
+mkdir -p /hpc/pmc_kool/fvalzano/pipelines_fv_output/Data_fetching/Script_copies/Requests/$Output_folder
+cp "$0" "/hpc/pmc_kool/fvalzano/pipelines_fv_output/Data_fetching/Script_copies/Requests/$Output_folder/$(basename "$0")"
