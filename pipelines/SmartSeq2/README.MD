@@ -1,6 +1,6 @@
 # Overview of the folder
 
-SCRIPT_DIR=${YourFavouriteDirectory}
+    SCRIPT_DIR=${YourFavouriteDirectory}
 This folder contains script to perform SmartSeq2 sequencing analysis of single cell plate sorted.
 
 

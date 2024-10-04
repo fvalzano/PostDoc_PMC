@@ -1,7 +1,7 @@
 # General Overview of the folder
 This folder contains collections of codes free to use within the PMC_Kool group.
 
-SCRIPT_DIR=${YourFavouriteDirectory}
+        SCRIPT_DIR=${YourFavouriteDirectory}
 
 
 Data_fetching: Contains pipeline to fetch bulk RNAsequencing runs from the bioinformatic server of the PMC, it is semi automated, the only thing to be changed are the PMCID of the given samples you want to retrieve in the R script ID_conversion.R (code line 10) and the date and requester in the Data_fetching.sh job script (code line 14 to 16).
