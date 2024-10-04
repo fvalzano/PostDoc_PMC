@@ -12,25 +12,25 @@ module use --append /hpc/local/CentOS7/pmc_research/etc/modulefiles
 module load STAR
 
 # Define base directory and output directories
-FASTQ_DIR="/hpc/pmc_kool/fvalzano/Ependymoma_Filbin/model_ss2/fastq"
+FASTQ_DIR="/hpc/pmc_kool/fvalzano/Ependymoma_Filbin/model_ss2/trimmed_fastq"
 OUTPUT_DIR="/hpc/pmc_kool/fvalzano/Ependymoma_Filbin/model_ss2/star_alignments"
 GENOME_DIR=/hpc/pmc_kool/fvalzano/Ref_genome_star/star         # Path to the directory where the STAR genome index is stored
 THREADS=8                              # Number of threads to use for STAR alignment
 SHORT_CELL_IDS=()
 CELL_IDS=()
-for FILE in ${FASTQ_DIR}/*/*_R1.fastq.gz; do
+for FILE in ${FASTQ_DIR}/*_R1_val_1.fq.gz; do
     # Extract the base name (e.g., 210FH-P2-A01_R1_trimmed.fq.gz)
     BASENAME=$(basename "$FILE")
     # Remove the '_R1.fastq.gz' suffix to get the ID (e.g., 210FH-P2-A01)
-    CELL_ID=$(echo "$BASENAME" | sed 's/_R1.fastq.gz//')
+    CELL_ID=$(echo "$BASENAME" | sed 's/_R1_val_1.fq.gz//')
     CELL_IDS+=("$CELL_ID")
 done
 # Loop through each cell and run STAR alignment
 
 for CELL in "${CELL_IDS[@]}"; do
         # Define input FASTQ files
-        FASTQ_R1="${FASTQ_DIR}/*/${CELL}_R1.fastq.gz"
-        FASTQ_R2="${FASTQ_DIR}/*/${CELL}_R2.fastq.gz"
+        FASTQ_R1="${FASTQ_DIR}/${CELL}_R1_val_1.fq.gz"
+        FASTQ_R2="${FASTQ_DIR}/${CELL}_R2_val_2.fq.gz"
     
         # Define output directory for each cell
         CELL_OUTPUT_DIR="${OUTPUT_DIR}/${CELL}"
