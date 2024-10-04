@@ -13,21 +13,18 @@ A copy of the script used for given requests will be saved under a folder with t
 remapping: Contains all the necessary elements to perform alignment of single cell sequencing fastq files.
 
 pipelines_from_PMC:
+    
     bulkRNA_quantification: Contains scripts to use PMC pipelines for bulkRNA sequencing
+        
         Barcode input search:
-            
             bash Barcodes_search.sh
         Fasta inputs generation script for sequencing performed on multiple lanes:
-            
             bash Fasta_inputs_generation_multi_lanes.sh
         Fasta inputs generation script for sequencing performed on single lane
-            
             bash Fasta_inputs_generation_single_lane:.sh
         Json file generation script for converting fastq to ubam format:
-
             bash Fastq_ubam_workflow_fv_inputs_json_generation.sh
         Json file generation script for converting ubam to counts format:
-
             bash Rna_fusions_germline_snv_inputs_no_molgenis_fv_generation.sh
         
 ## Subfolders:
