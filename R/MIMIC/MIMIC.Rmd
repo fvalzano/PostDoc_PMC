@@ -34,7 +34,7 @@ library(futile.logger)
 library(scater)
 ```
 ```{r MIMIC input files, include=FALSE}
-base_directory = getwd() #Make sure you have the file you want to analyze in this folder: Name the folder with sequencing facility ID and put filtered_feature_bc_matrix in it, the script will fetch the data that it needs
+base_directory = "/hpc/pmc_kool/fvalzano/Rstudio_Test1/MIMIC/Data/10x_runs/" #Make sure you have the file you want to analyze in this folder: Name the folder with sequencing facility ID and put filtered_feature_bc_matrix in it, the script will fetch the data that it needs
 filenames = c(paste0("LX", 430:441), paste0("LX",500:507)) #Load the correct file labels
 raw_reads = list() #Prepare raw reads list for for loop
 seurat_objects=list() #Prepare seurat objects list for loop
@@ -42,7 +42,7 @@ seurat_objects=list() #Prepare seurat objects list for loop
 
 for (i in filenames) {
   # Create the file name for each sample
-  file_dir = paste0(base_directory,"/Rstudio_Test1/MIMIC/Data/10x_runs/", i, "/filtered_feature_bc_matrix")
+  file_dir = paste0(base_directory, i, "/filtered_feature_bc_matrix")
   # Read the sample data from the file using Read10x
   sample_data = Read10X(file_dir)
   raw_reads[[i]] = sample_data
