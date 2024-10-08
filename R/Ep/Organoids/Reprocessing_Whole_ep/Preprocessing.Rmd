@@ -1,0 +1,69 @@
+---
+title: "Whole_organoid"
+author: "Francesco Valzano"
+date: "8/10/2024"
+output: html_document
+---
+```{r libraries, include=FALSE}
+library(Seurat)
+library(ggplot2)
+library(harmony)
+library(scutils2)
+```
+
+```{r setup}
+#Directory where 10x runs are stored
+base_directory = "/hpc/pmc_kool/fvalzano/Rstudio_Test1/Ependymoma_organoids/Whole/10x/" 
+#LX ID of the files to analyse
+filenames = list.files(base_directory)
+#Prepare raw reads list for for loop
+raw_reads = list() 
+#Prepare seurat objects list for loop
+seurat_objects=list() 
+```
+
+```{r QC preprocessing}
+for (i in filenames) {
+  # Create the file name for each sample
+  file_dir = paste0(base_directory, i, "/filtered_feature_bc_matrix")
+  # Read the sample data from the file using Read10x
+  sample_data = Read10X(file_dir)
+  raw_reads[[i]] = sample_data
+  #Create Seurat object per each sample
+  seurat_objects[[i]] = CreateSeuratObject(counts = raw_reads[[i]], project = i, min.cells = 3, min.features = 150)
+  #Find ribosomial genes
+  rb.genes = rownames(seurat_objects[[i]])[grep("^RP[SL]",rownames(seurat_objects[[i]]))] 
+  Assay = GetAssayData(seurat_objects[[i]])
+  #Calculate ribosomial protein gene content
+  percent.ribo = colSums(Assay[rb.genes,])/Matrix::colSums(Assay)*100 
+  #Calculate mithochondrial gene content
+  seurat_objects[[i]][["percent.mt"]] = PercentageFeatureSet(seurat_objects[[i]], pattern = "^MT-") 
+  #Manually add % of ribosomial protein genes
+  seurat_objects[[i]] = AddMetaData(seurat_objects[[i]], percent.ribo, col.name = "percent.ribo") 
+  }
+```
+```{r Demultiplexing}  
+# LX686 and LX687 are multiplexed runs, demultiplex was run from facility with SoupOrCell, demultiplexing step:
+for (i in c("LX686", "LX687")){
+  demultiplex = read.delim(file=paste0(base_directory, i, "/demultiplex/k2/clusters.tsv")) 
+  genotype <- with(demultiplex, ifelse(status=="singlet", paste0('g',assignment), status)) 
+  names(genotype) <- demultiplex$barcode 
+  seurat_objects[[i]] <- AddMetaData(seurat_objects[[i]], metadata=genotype, col.name="genotype") 
+}
+#load genome df list from scutils2
+genome <- use_genome('refdata_gex_GRCh38_2020_A')
+#Access genelists for male and female for demultiplexing
+male = genome$genelists$male
+female = genome$genelists$female
+DotPlot(seurat_objects$LX686, group.by = "genotype", features = male)
+DotPlot(seurat_objects$LX686, group.by = "genotype", features = female)
+DotPlot(seurat_objects$LX687, group.by = "genotype", features = male)
+DotPlot(seurat_objects$LX687, group.by = "genotype", features = female)
+#After preliminary analysis, we can see that g0 correspond to males samples, while g1 correspond to female samples
+for (i in c("LX686", "LX687")){
+    seurat_objects[[i]]$genotype = ifelse(seurat_objects[[i]]$genotype == "g0", "male",
+                                      ifelse(seurat_objects[[i]]$genotype =="g1","female",
+                                              ifelse(seurat_objects[[i]]$genotype == "doublet", "doublet",
+                                                    ifelse(seurat_objects[[i]]$genotype == "unassigned", "unassigned", ""))))
+}
+```
