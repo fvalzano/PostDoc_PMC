@@ -9,6 +9,8 @@ library(Seurat)
 library(ggplot2)
 library(harmony)
 library(scutils2)
+library(scater)
+library(readr)
 ```
 
 ```{r setup}
@@ -22,7 +24,7 @@ raw_reads = list()
 seurat_objects=list() 
 ```
 
-```{r QC preprocessing}
+```{r Preprocessing}
 for (i in filenames) {
   # Create the file name for each sample
   file_dir = paste0(base_directory, i, "/filtered_feature_bc_matrix")
@@ -66,4 +68,81 @@ for (i in c("LX686", "LX687")){
                                               ifelse(seurat_objects[[i]]$genotype == "doublet", "doublet",
                                                     ifelse(seurat_objects[[i]]$genotype == "unassigned", "unassigned", ""))))
 }
+Idents(seurat_objects$LX686) = "genotype"
+Idents(seurat_objects$LX687) = "genotype"
+#Split based on sex
+#LX686
+LX686_Ctrl = subset(seurat_objects$LX686, ident = "female")
+Idents(LX686_Ctrl)="orig.ident"
+LX686_Ctrl = RenameIdents(LX686_Ctrl, c("LX686" = "LX686_Ctrl"))
+LX686_Ctrl$orig.ident=LX686_Ctrl@active.ident
+LX686_ZFTA = subset(seurat_objects$LX686, ident = "male")
+Idents(LX686_ZFTA)="orig.ident"
+LX686_ZFTA = RenameIdents(LX686_ZFTA, c("LX686" = "LX686_ZFTA"))
+LX686_ZFTA$orig.ident=LX686_ZFTA@active.ident
+#LX687
+LX687_YAP = subset(seurat_objects$LX687, ident = "female")
+Idents(LX687_YAP)="orig.ident"
+LX687_YAP = RenameIdents(LX687_YAP, c("LX687" = "LX687_YAP"))
+LX687_YAP$orig.ident=LX687_YAP@active.ident
+LX687_Ctrl = subset(seurat_objects$LX687, ident = "male")
+Idents(LX687_Ctrl)="orig.ident"
+LX687_Ctrl = RenameIdents(LX687_Ctrl, c("LX687" = "LX687_Ctrl"))
+LX687_Ctrl$orig.ident=LX687_Ctrl@active.ident
+#Create new list of demultiplexed runs
+demultiplexed_seurat=list(LX686_Ctrl, LX686_ZFTA, LX687_YAP, LX687_Ctrl)
+#Delete the multiplexed objects from original list
+seurat_objects$LX686 = NULL
+seurat_objects$LX687 = NULL
+#merge original list (minus the two multiplexed runs) with the new list of demultiplexed seurat objs
+seurat_objects=append(seurat_objects, demultiplexed_seurat)
+names(seurat_objects) = c("LX360", "LX362", "LX369", "LX370", "LX686_Ctrl","LX686_ZFTA","LX687_YAP","LX687_Ctrl")
+```
+
+```{r QC, include=FALSE}
+#Save QC plots
+pdf("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Ependymoma_organoids/Whole/QC.pdf", width=5, height=5)
+for (i in names(seurat_objects)) {
+  #calculation of threshold is performed either by either IsOutlier() function or via expliciting the formula - results are the same
+  min.nFeature.thr = median(seurat_objects[[i]]$nFeature_RNA) - 3*mad(seurat_objects[[i]]$nFeature_RNA)
+  max.nFeature.thr = median(seurat_objects[[i]]$nFeature_RNA) + 3*mad(seurat_objects[[i]]$nFeature_RNA)
+  max.nCount.thr = median(seurat_objects[[i]]$nCount_RNA) + 3*mad(seurat_objects[[i]]$nCount_RNA)
+  QC = seurat_objects[[i]]@meta.data
+  QC$nCount_RNA = QC$nCount_RNA
+  QC$nFeature_RNA = QC$nFeature_RNA
+  QC$Dropouts = ifelse(QC$nCount_RNA<max.nCount.thr&
+                         QC$nFeature_RNA>min.nFeature.thr&
+                         QC$nFeature_RNA<max.nFeature.thr, FALSE, TRUE)
+  p = QC %>%
+    arrange(percent.mt) %>%
+    ggplot(aes(nCount_RNA, nFeature_RNA, colour=percent.mt, shape = Dropouts)) + 
+    geom_point() + 
+    scale_shape_manual(values = c(16,17), 
+                       labels = c(paste0("Retained (",sum(QC$Dropouts == FALSE), " cells)"),
+                                  paste0("Dropouts (",sum(QC$Dropouts == TRUE), " cells)"))) +
+    scale_color_gradientn(colors=c("black","blue","green2","red","yellow")) +
+    ggtitle(paste0("QC metrics ", unique(QC$orig.ident)))+
+    geom_vline(xintercept = max.nCount.thr)+
+    geom_hline(yintercept = c(min.nFeature.thr,max.nFeature.thr))+
+    ylim(min.nFeature.thr-1,max(QC$nFeature_RNA))
+  print(p)
+}
+dev.off()
+rm(p,QC)
+#Apply QC
+qc_seurat_objects <- list()
+for (i in names(seurat_objects)) {
+  seurat_objects[[i]]$nFeature.thr = isOutlier(seurat_objects[[i]]$nFeature_RNA, nmads=3, type="both", log=FALSE)
+   seurat_objects[[i]]$nCount.thr = isOutlier(seurat_objects[[i]]$nCount_RNA, nmads=3, type="higher", log=FALSE)
+   seurat_objects[[i]] <- seurat_objects[[i]][,!(seurat_objects[[i]]$nCount.thr |  seurat_objects[[i]]$nFeature.thr)]
+   qc_seurat_objects[[i]] = subset(seurat_objects[[i]], subset = percent.mt <5)
+}
+rm(seurat_objects)
+```
+```{r Data export}
+dir_target= "/hpc/pmc_kool/fvalzano/Rstudio_Test1/Ependymoma_organoids/Whole/seurat_objs/Post_preprocessing/"
+for (i in names(qc_seurat_objects)){
+  write_rds(qc_seurat_objects[[i]], paste0(dir_target, i, ".rds"))
+}
+
 ```
