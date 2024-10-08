@@ -38,7 +38,7 @@ for bam_file in ${ALIGN_OUTPUT_DIR}/*_sorted_by_name.bam; do
                   -a $GTF_FILE \
                   -o ${OUTPUT_COUNTS}/${sample_name}_featureCounts.txt \
                   -g gene_id \
-                  -t exon \
+                  -t gene \
                   -p \
                   -B \
                   -C \
