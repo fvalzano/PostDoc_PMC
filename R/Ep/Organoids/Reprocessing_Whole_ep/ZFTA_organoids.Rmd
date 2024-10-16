@@ -1,0 +1,188 @@
+---
+title: "Whole_organoid_zfta"
+author: "Francesco Valzano"
+date: "8/10/2024"
+output: html_document
+---
+```{r libraries, include=FALSE}
+library(Seurat)
+library(SeuratDisk)
+library(ggplot2)
+library(harmony)
+library(scutils2)
+library(scater)
+library(readr)
+library(stringr)
+library(reticulate)
+library(SeuratWrappers)
+library(DoubletFinder)
+
+```
+```{r setup}
+#Load the data
+base_directory = "/hpc/pmc_kool/fvalzano/Rstudio_Test1/Ependymoma_organoids/Whole/" 
+filenames = list.files(paste0(base_directory, "seurat_objs/Post_preprocessing/"))
+qc_seurat_objects = list()
+for (i in filenames){
+    qc_seurat_objects[[i]] = readRDS(paste0(base_directory, "seurat_objs/Post_preprocessing/", i))
+}
+names(qc_seurat_objects) = str_remove(filenames, ".rds")
+```
+```{r subset ZFTA organoids}
+ZFTA = qc_seurat_objects[c("LX369", "LX370", "LX686_ZFTA", "LX686_Ctrl")]
+```
+
+```{r Doublet Identification}
+ZFTA$LX686_ZFTA$genotype = NULL
+ZFTA$LX686_Ctrl$genotype = NULL
+for (i in names(ZFTA)) {
+  # print the sample we are on
+    print(paste0("Sample ",i))
+
+  # Pre-process seurat object with alternative workflow: LX686_ZFTA has few cells and creates problems with CellCycleScoring. Taking inspiration from: https://github.com/satijalab/seurat/issues/3692
+  # normalize all the dataset with log normalization, run cell cycle scoring on RNA slot, and then re-run SCT on RNA slot (SCT will fetch anyhow raw counts for normalization)
+    ZFTA[[i]] = NormalizeData(ZFTA[[i]])
+    ZFTA[[i]]= CellCycleScoring(ZFTA[[i]], s.features = cc.genes.updated.2019$s.genes, g2m.features = cc.genes.updated.2019$g2m.genes, assay = 'RNA')
+    ZFTA[[i]] = SCTransform(ZFTA[[i]], vars.to.regress = c("percent.mt", "percent.ribo", 'S.Score', 'G2M.Score'), vst.flavor = "v2", assay = "RNA")
+    hvg = VariableFeatures(ZFTA[[i]])
+    ribo.genes <- grep(pattern = "^RP[SL]", x = hvg, value = TRUE)
+    subtract<-which(hvg %in% ribo.genes)
+    hvg<-hvg[-subtract]
+    ZFTA[[i]] <- RunPCA(ZFTA[[i]], nfeatures.print = 10, features=hvg)
+    
+  # Find significant PCs
+    stdv <- ZFTA[[i]][["pca"]]@stdev
+    sum.stdv <- sum(ZFTA[[i]][["pca"]]@stdev)
+    percent.stdv <- (stdv / sum.stdv) * 100
+    cumulative <- cumsum(percent.stdv)
+    co1 <- which(cumulative > 90 & percent.stdv < 5)[1]
+    co2 <- sort(which((percent.stdv[1:length(percent.stdv) - 1] - 
+                       percent.stdv[2:length(percent.stdv)]) > 0.1), 
+              decreasing = T)[1] + 1
+    min.pc <- min(co1, co2)
+    min.pc
+  
+  # finish pre-processing
+    ZFTA[[i]] <- RunUMAP(ZFTA[[i]], dims = 1:min.pc)
+    ZFTA[[i]] <- FindNeighbors(object = ZFTA[[i]], dims = 1:min.pc)              
+    ZFTA[[i]] <- FindClusters(object = ZFTA[[i]], resolution = 0.1)
+  
+  # pK identification (no ground-truth)
+    sweep.list <- paramSweep(ZFTA[[i]], PCs = 1:min.pc, sct=T)
+    sweep.stats <- summarizeSweep(sweep.list)
+    bcmvn <- find.pK(sweep.stats)
+  
+  # Optimal pK is the max of the bomodality coefficent (BCmvn) distribution
+    bcmvn.max <- bcmvn[which.max(bcmvn$BCmetric),]
+    optimal.pk <- bcmvn.max$pK
+    optimal.pk <- as.numeric(levels(optimal.pk))[optimal.pk]
+  
+  ## Homotypic doublet proportion estimate
+    annotations <- ZFTA[[i]]@meta.data$seurat_clusters
+    homotypic.prop <- modelHomotypic(annotations) 
+    nExp.poi <- round(optimal.pk * nrow(ZFTA[[i]]@meta.data)) ## Assuming 7.5% doublet formation rate - tailor for your dataset
+    nExp.poi.adj <- round(nExp.poi * (1 - homotypic.prop))
+  
+  # run DoubletFinder
+    ZFTA[[i]] <- doubletFinder(seu = ZFTA[[i]], 
+                                   PCs = 1:min.pc, 
+                                   pK = optimal.pk,
+                                   nExp = nExp.poi.adj,
+                                   sct=T)
+    metadata <- ZFTA[[i]]@meta.data
+    names(metadata)[16] <- "doublet_finder"    
+    ZFTA[[i]]@meta.data <- metadata 
+    df = as.data.frame(ZFTA[[i]]$doublet_finder)
+    df$barcodes = colnames(ZFTA[[i]])
+    colnames(df) = c("droplet_content", "barcodes")
+    write_csv2(df, paste0("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Ependymoma_organoids/Whole/DoubletFinder/", "DoubletFinder_",i,".csv"))
+}
+```
+
+```{r Data Merging -Important in Seurat v5- SCT Normalization}
+#In Seurat v5 first merge the objects and then integrate them
+ZFTA_first = ZFTA[[1]]
+ZFTA[[1]] = NULL
+ZFTA =  merge(x = ZFTA_first, y= c(ZFTA), merge.data = TRUE, project = "Ep_whole_organoids") 
+#Perform SCT normalization and then calculate cellcycle scoring, after that, rerun SCT regressing out the cell cycle Phase
+scrna_ZFTA = SCTransform(ZFTA, vars.to.regress = c("percent.mt", "percent.ribo"), vst.flavor = "v2", assay = "RNA")
+scrna_ZFTA= CellCycleScoring(scrna_ZFTA, s.features = cc.genes.updated.2019$s.genes, g2m.features = cc.genes.updated.2019$g2m.genes, assay = 'SCT')
+scrna_ZFTA = SCTransform(scrna_ZFTA, vars.to.regress = c("percent.mt", "percent.ribo", 'S.Score', 'G2M.Score'), vst.flavor = "v2", assay = "RNA")
+```
+
+```{r Dimensionality reduction}
+#Remove potential ribosomial genes from high variable features used for PCA
+hvg = VariableFeatures(scrna_ZFTA)
+ribo.genes <- grep(pattern = "^RP[SL]", x = hvg, value = TRUE)
+subtract<-which(hvg %in% ribo.genes)
+hvg<-hvg[-subtract]
+#Perform dimensionality reduction on unintegrated object
+scrna_ZFTA<-RunPCA (scrna_ZFTA, verbose = T, features = hvg)
+#Remove Ribosomial genes from variable features used for pca
+scrna_ZFTA <- FindNeighbors(object = scrna_ZFTA, reduction = "pca", dims = 1:30)
+scrna_ZFTA = RunUMAP(scrna_ZFTA, reduction = "pca", dims = 1:30, reduction.name = "umap")
+i = seq(0.2, 1, by = 0.2)
+scrna_ZFTA <- FindClusters(scrna_ZFTA, resolution = i)
+```
+
+```{r Harmony Integration}
+scrna_ZFTA <- IntegrateLayers(object = scrna_ZFTA, 
+                             method = HarmonyIntegration,
+                             orig.reduction = "pca", 
+                             normalization.method = "SCT", 
+                             new.reduction = "harmony")
+scrna_ZFTA <- FindNeighbors(scrna_ZFTA, reduction = "harmony", dims = 1:30)
+scrna_ZFTA <- FindClusters(scrna_ZFTA, resolution = i, cluster.name=paste0("Harmony_SCT_",i))
+scrna_ZFTA <- RunUMAP(scrna_ZFTA, reduction = "harmony", dims = 1:30, reduction.name = "umap_harmony")
+```
+```{r CCA Integration}
+scrna_ZFTA <- IntegrateLayers(object = scrna_ZFTA, 
+                             method = CCAIntegration,
+                             orig.reduction = "pca", 
+                             normalization.method = "SCT", 
+                             new.reduction = "cca")
+scrna_ZFTA <- FindNeighbors(scrna_ZFTA, reduction = "cca", dims = 1:30)
+scrna_ZFTA <- FindClusters(scrna_ZFTA, resolution = i, cluster.name=paste0("CCA_SCT_",i))
+scrna_ZFTA <- RunUMAP(scrna_ZFTA, reduction = "cca", dims = 1:30, reduction.name = "umap_cca")
+scrna_ZFTA = JoinLayers(scrna_ZFTA, assay = "RNA")
+```
+
+```{r Exclude doublets}
+write_rds(scrna_ZFTA, "/hpc/pmc_kool/fvalzano/Rstudio_Test1/Ependymoma_organoids/Whole/seurat_objs/Post_integration/scrna_ZFTA.rds")
+Idents(scrna_ZFTA) = "doublet_finder"
+scrna_ZFTA_noDoublets = subset(scrna_ZFTA, idents = "Singlet")
+write_rds(scrna_ZFTA_noDoublets, "/hpc/pmc_kool/fvalzano/Rstudio_Test1/Ependymoma_organoids/Whole/seurat_objs/Post_integration/scrna_ZFTA_noDoublets.rds")
+```
+```{r Annotations}
+scrna_ZFTA = readRDS("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Ependymoma_organoids/Whole/seurat_objs/Post_integration/scrna_ZFTA_noDoublets.rds")
+#condition
+Idents(scrna_ZFTA) = "orig.ident"
+scrna_ZFTA = RenameIdents(scrna_ZFTA, c("LX369" = "ZFTA",
+                                      "LX370" = "CTRL",
+                                      "LX686_ZFTA" = "ZFTA",
+                                      "LX686_Ctrl" = "CTRL"))
+scrna_ZFTA$condition = scrna_ZFTA@active.ident
+#Overlay annotation from healthy organoids
+scrna_ZFTA = readRDS("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Ependymoma_organoids/Whole/seurat_objs/Post_integration/scrna_ZFTA_noDoublets.rds")
+scrna_healthy = readRDS("/hpc/pmc_kool/fvalzano/Jupyter/scvelo/Ependymoma/rds files/LX_healthy_final.rds")
+scrna_healthy_no_EarlyRG = subset(scrna_healthy, idents=c("Neuronal", "Late RG", "RG/Astroglia"))
+#Change name of pca slot from pca_new to pca for FindTransferAnchors()
+names(scrna_healthy_no_EarlyRG@reductions) = c("pca", "umap")
+#Perform SCT normalization and PCA on reference healthy dataset - FindTransferAnchors() works only on embeddings calculated from the same type of normalization
+scrna_healthy_no_EarlyRG = SCTransform(scrna_healthy_no_EarlyRG)
+scrna_healthy_no_EarlyRG = RunPCA(scrna_healthy_no_EarlyRG)
+#Perform reference Map querying
+anchors <- FindTransferAnchors(reference = scrna_healthy_no_EarlyRG, query = scrna_ZFTA, dims = 1:30, reference.reduction = "pca", normalization.method="SCT")
+predictions <- TransferData(anchorset = anchors, refdata = scrna_healthy_no_EarlyRG$own.mapping, dims = 1:30)
+#Add prediction as metadata slot to the single cell object
+scrna_ZFTA <- AddMetaData(scrna_ZFTA, metadata = predictions)
+Idents(scrna_ZFTA) = "predicted.id"
+#Correct naming
+scrna_ZFTA = RenameIdents(scrna_ZFTA, c("Late RG" = "Late_RG",
+                                      "Neuronal" = "Neuronal",
+                                      "RG/Astroglia" = "EPN_ECM"))
+scrna_ZFTA$predicted.id = scrna_ZFTA@active.ident
+#Export
+write_rds(scrna_ZFTA, "/hpc/pmc_kool/fvalzano/Rstudio_Test1/Ependymoma_organoids/Whole/seurat_objs/Post_Annotation/scrna_ZFTA.rds")
+```
+
