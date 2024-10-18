@@ -172,7 +172,7 @@ scrna_healthy = SCTransform(scrna_healthy)
 scrna_healthy = RunPCA(scrna_healthy)
 #Perform reference Map querying
 anchors <- FindTransferAnchors(reference = scrna_healthy, query = scrna_YAP, dims = 1:30, reference.reduction = "pca", normalization.method="SCT")
-predictions <- TransferData(anchorset = anchors, refdata = scrna$own.mapping, dims = 1:30)
+predictions <- TransferData(anchorset = anchors, refdata = scrna_healthy$own.mapping, dims = 1:30)
 #Add prediction as metadata slot to the single cell object
 scrna_YAP <- AddMetaData(scrna_YAP, metadata = predictions)
 Idents(scrna_YAP) = "predicted.id"
