@@ -165,15 +165,14 @@ scrna_ZFTA$condition = scrna_ZFTA@active.ident
 #Overlay annotation from healthy organoids
 scrna_ZFTA = readRDS("/hpc/pmc_kool/fvalzano/Rstudio_Test1/Ependymoma_organoids/Whole/seurat_objs/Post_integration/scrna_ZFTA_noDoublets.rds")
 scrna_healthy = readRDS("/hpc/pmc_kool/fvalzano/Jupyter/scvelo/Ependymoma/rds files/LX_healthy_final.rds")
-scrna_healthy_no_EarlyRG = subset(scrna_healthy, idents=c("Neuronal", "Late RG", "RG/Astroglia"))
 #Change name of pca slot from pca_new to pca for FindTransferAnchors()
-names(scrna_healthy_no_EarlyRG@reductions) = c("pca", "umap")
+names(scrna_healthy@reductions) = c("pca", "umap")
 #Perform SCT normalization and PCA on reference healthy dataset - FindTransferAnchors() works only on embeddings calculated from the same type of normalization
-scrna_healthy_no_EarlyRG = SCTransform(scrna_healthy_no_EarlyRG)
-scrna_healthy_no_EarlyRG = RunPCA(scrna_healthy_no_EarlyRG)
+scrna_healthy = SCTransform(scrna_healthy)
+scrna_healthy = RunPCA(scrna_healthy)
 #Perform reference Map querying
-anchors <- FindTransferAnchors(reference = scrna_healthy_no_EarlyRG, query = scrna_ZFTA, dims = 1:30, reference.reduction = "pca", normalization.method="SCT")
-predictions <- TransferData(anchorset = anchors, refdata = scrna_healthy_no_EarlyRG$own.mapping, dims = 1:30)
+anchors <- FindTransferAnchors(reference = scrna_healthy, query = scrna_ZFTA, dims = 1:30, reference.reduction = "pca", normalization.method="SCT")
+predictions <- TransferData(anchorset = anchors, refdata = scrna_healthy$own.mapping, dims = 1:30)
 #Add prediction as metadata slot to the single cell object
 scrna_ZFTA <- AddMetaData(scrna_ZFTA, metadata = predictions)
 Idents(scrna_ZFTA) = "predicted.id"
