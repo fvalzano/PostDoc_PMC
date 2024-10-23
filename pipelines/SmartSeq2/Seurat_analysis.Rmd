@@ -1,0 +1,245 @@
+---
+title: "SmartSeq2"
+author: "Francesco Valzano"
+date: "8/10/2024"
+output: html_document
+---
+```{r libraries, include=FALSE}
+library(Seurat)
+library(SeuratDisk)
+library(ggplot2)
+library(harmony)
+library(scutils2)
+library(scater)
+library(readr)
+library(stringr)
+library(reticulate)
+library(SeuratWrappers)
+```
+```{r load seurat obj}
+scrna = readRDS("/hpc/pmc_kool/fvalzano/Ependymoma_Filbin/model_ss2/seurat_merged.rds")
+#typo in some fastq files, replace _ with -
+cell_barcodes = gsub("_", "-", colnames(scrna))
+colnames(scrna) = cell_barcodes
+```
+```{r Annotations models}
+models = colnames(scrna)
+models <- sapply(strsplit(models, "-"), function(x) paste(x[1:2], collapse = "-"))
+models = as.data.frame(models, row.names=colnames(scrna))
+scrna = AddMetaData(scrna, models, "models")
+#subset interesting models
+models = colnames(scrna)
+models <- sapply(strsplit(models, "-"), function(x) paste(x[1:2], collapse = "-"))
+models = as.data.frame(models, row.names=colnames(scrna))
+models = unique(models$models)
+interesting_models = models[models %in% c("EP1NS-P1",
+                                                                  "EP1NS-P2",
+                                                                  "BT165-P1",
+                                                                  "BT165-P2",
+                                                                  "VBT242-P1",
+                                                                  "VBT242-P2",
+                                                                  "vbt211sph-P6",
+                                                                  "vbt211sph-P7",
+                                                                  "vbt211adh-P3",
+                                                                  "vbt211adh-P4")]
+Idents(scrna) = "models"
+scrna_subset= subset(scrna, idents = interesting_models)
+saveRDS(scrna_subset, "/hpc/pmc_kool/fvalzano/Ependymoma_Filbin/model_ss2/Downstream_analysis/seurat_objs/Seurat_interesting_models.rds")
+saveRDS(scrna, "/hpc/pmc_kool/fvalzano/Ependymoma_Filbin/model_ss2/Downstream_analysis/seurat_objs/Seurat_all_models.rds")
+
+```
+
+```{r Split models}
+scrna = readRDS("/hpc/pmc_kool/fvalzano/Ependymoma_Filbin/model_ss2/Downstream_analysis/seurat_objs/Seurat_all_models.rds")
+scrna_split= SplitObject(scrna, split.by = "models")
+for (i in names(scrna_split)){
+  saveRDS(scrna_split[[i]], paste0("/hpc/pmc_kool/fvalzano/Ependymoma_Filbin/model_ss2/Downstream_analysis/seurat_objs/Single_plates/", i, ".rds"))
+}
+```
+```{r QC, include=FALSE}
+rds_files = list.files("/hpc/pmc_kool/fvalzano/Ependymoma_Filbin/model_ss2/Downstream_analysis/seurat_objs/Single_plates")
+rds_files = gsub(".rds", "", rds_files)
+seurat_objs = list()
+qc_seurat_objs = list()
+for (i in rds_files){
+    seurat_objs[[i]] = readRDS(paste0("/hpc/pmc_kool/fvalzano/Ependymoma_Filbin/model_ss2/Downstream_analysis/seurat_objs/Single_plates/", i, ".rds"))
+    rb.genes = rownames(seurat_objs[[i]])[grep("^RP[SL]",rownames(seurat_objs[[i]]))] 
+    Assay = GetAssayData(seurat_objs[[i]])
+    #Calculate ribosomial protein gene content
+    percent.ribo = colSums(Assay[rb.genes,])/Matrix::colSums(Assay)*100 
+    #Calculate mithochondrial gene content
+    seurat_objs[[i]][["percent.mt"]] = PercentageFeatureSet(seurat_objs[[i]], pattern = "^MT-") 
+    #Manually add % of ribosomial protein genes
+    seurat_objs[[i]] = AddMetaData(seurat_objs[[i]], percent.ribo, col.name = "percent.ribo") 
+
+    #Save QC plots
+    pdf(paste0("/hpc/pmc_kool/fvalzano/Ependymoma_Filbin/model_ss2/Downstream_analysis/QC_", i, ".pdf"), width=5, height=5)
+    #calculation of threshold is performed either by either IsOutlier() function or via expliciting the formula - results are the same
+    min.nFeature.thr = median(seurat_objs[[i]]$nFeature_RNA) - 3*mad(seurat_objs[[i]]$nFeature_RNA)
+    max.nFeature.thr = median(seurat_objs[[i]]$nFeature_RNA) + 3*mad(seurat_objs[[i]]$nFeature_RNA)
+    max.nCount.thr = median(seurat_objs[[i]]$nCount_RNA) + 3*mad(seurat_objs[[i]]$nCount_RNA)
+    QC = seurat_objs[[i]]@meta.data
+    QC$nCount_RNA = QC$nCount_RNA
+    QC$nFeature_RNA = QC$nFeature_RNA
+    QC$Dropouts = ifelse(QC$nCount_RNA<max.nCount.thr&
+                       QC$nFeature_RNA>min.nFeature.thr&
+                       QC$nFeature_RNA<max.nFeature.thr, FALSE, TRUE)
+    p = QC %>%
+      arrange(percent.mt) %>%
+      ggplot(aes(nCount_RNA, nFeature_RNA, colour=percent.mt, shape = Dropouts)) + 
+      geom_point() + 
+      scale_shape_manual(values = c(16,17), 
+                     labels = c(paste0("Retained (",sum(QC$Dropouts == FALSE), " cells)"),
+                                paste0("Dropouts (",sum(QC$Dropouts == TRUE), " cells)"))) +
+      scale_color_gradientn(colors=c("black","blue","green2","red","yellow")) +
+      ggtitle(paste0("QC metrics ", unique(QC$orig.ident)))+
+      geom_vline(xintercept = max.nCount.thr)+
+      geom_hline(yintercept = c(min.nFeature.thr,max.nFeature.thr))+
+      ylim(0,15000)
+    print(p)
+
+    dev.off()
+    rm(p,QC)
+    #Apply QC
+    seurat_objs[[i]]$nFeature.thr = isOutlier(seurat_objs[[i]]$nFeature_RNA, nmads=3, type="both", log=FALSE)
+    seurat_objs[[i]]$nCount.thr = isOutlier(seurat_objs[[i]]$nCount_RNA, nmads=3, type="higher", log=FALSE)
+    seurat_objs[[i]] <- seurat_objs[[i]][,!(seurat_objs[[i]]$nCount.thr |  seurat_objs[[i]]$nFeature.thr)]
+    qc_seurat_objs[[i]] = subset(seurat_objs[[i]], subset = percent.mt <5)
+    seurat_objs[[i]] = qc_seurat_objs[[i]]
+    saveRDS(seurat_objs[[i]], paste0("/hpc/pmc_kool/fvalzano/Ependymoma_Filbin/model_ss2/Downstream_analysis/seurat_objs/Single_plates_afterQC/", i, ".rds"))
+}
+```
+```{r Data Merging -Important in Seurat v5- SCT Normalization}
+seurat_objs_dir = list.files("/hpc/pmc_kool/fvalzano/Ependymoma_Filbin/model_ss2/Downstream_analysis/seurat_objs/Single_plates_afterQC/")
+seurat_objs_dir = gsub(".rds", "", seurat_objs_dir)
+#filter for interesting models
+interesting_models =  c("EP1NS-P1",
+                                                                  "EP1NS-P2",
+                                                                  "BT165-P1",
+                                                                  "BT165-P2",
+                                                                  "VBT242-P1",
+                                                                  "VBT242-P2",
+                                                                  "vbt211sph-P6",
+                                                                  "vbt211sph-P7",
+                                                                  "vbt211adh-P3",
+                                                                  "vbt211adh-P4")
+seurat_objs = list()
+for (i in seurat_objs_dir){
+  seurat_objs[[i]] = readRDS(paste0("/hpc/pmc_kool/fvalzano/Ependymoma_Filbin/model_ss2/Downstream_analysis/seurat_objs/Single_plates_afterQC/", i, ".rds"))
+}
+seurat_objs <- seurat_objs[names(seurat_objs) %in% interesting_models]
+#In Seurat v5 first merge the objects and then integrate them
+seurat_objs_first = seurat_objs[[1]]
+seurat_objs[[1]] = NULL
+scrna =  merge(x = seurat_objs_first, y= c(seurat_objs), merge.data = TRUE, project = "SmartSeq2") 
+scrna = SCTransform(scrna, vars.to.regress = c("percent.mt", "percent.ribo"), vst.flavor = "v2", assay = "RNA")
+scrna= CellCycleScoring(scrna, s.features = cc.genes.updated.2019$s.genes, g2m.features = cc.genes.updated.2019$g2m.genes, assay = 'SCT')
+scrna = SCTransform(scrna, vars.to.regress = c("percent.mt", "percent.ribo", 'S.Score', 'G2M.Score'), vst.flavor = "v2", assay = "RNA")
+```
+```{r Dimensionality reduction}
+hvg = VariableFeatures(scrna)
+ribo.genes <- grep(pattern = "^RP[SL]", x = hvg, value = TRUE)
+subtract<-which(hvg %in% ribo.genes)
+hvg<-hvg[-subtract]
+scrna <- RunPCA(scrna, nfeatures.print = 10, features=hvg)
+scrna <- FindNeighbors(object = scrna, reduction = "pca", dims = 1:30)
+scrna = RunUMAP(scrna, reduction = "pca", dims = 1:30, reduction.name = "umap")
+i = seq(0.2, 1, by = 0.2)
+scrna <- FindClusters(scrna, resolution = i)
+```
+```{r Harmony Integration}
+scrna <- IntegrateLayers(object = scrna, 
+                             method = HarmonyIntegration,
+                             orig.reduction = "pca", 
+                             normalization.method = "SCT", 
+                             new.reduction = "harmony")
+scrna <- FindNeighbors(scrna, reduction = "harmony", dims = 1:30)
+scrna <- FindClusters(scrna, resolution = i, cluster.name=paste0("Harmony_SCT_",i))
+scrna <- RunUMAP(scrna, reduction = "harmony", dims = 1:30, reduction.name = "umap_harmony")
+DimPlot(scrna, group.by = "models", reduction = "umap_harmony", label = T, pt.size = 1.2) + DimPlot(scrna, group.by = "Harmony_SCT_0.4", reduction = "umap_harmony", label = T, pt=1.2)
+DotPlot(scrna, group.by = "models", features = "FOXG1")
+saveRDS(scrna, "/hpc/pmc_kool/fvalzano/Ependymoma_Filbin/model_ss2/Downstream_analysis/seurat_objs/Seurat_post_integration.rds")
+```
+```{r Reference Mapping}
+scrna_models = readRDS("/hpc/pmc_kool/fvalzano/Ependymoma_Filbin/model_ss2/Downstream_analysis/seurat_objs/Seurat_post_integration.rds")
+Idents(scrna_models) = "models"
+scrna_healthy = readRDS("/hpc/pmc_kool/fvalzano/Jupyter/scvelo/Ependymoma/rds files/LX_healthy_final.rds")
+scrna_healthy = RenameIdents(scrna_healthy, c("RG/Astroglia" = "EPN_ECM"))
+scrna_healthy$own.mapping = scrna_healthy@active.ident
+#Change name of pca slot from pca_new to pca for FindTransferAnchors()
+names(scrna_healthy@reductions) = c("pca", "umap")
+#Perform SCT normalization and PCA on reference healthy dataset - FindTransferAnchors() works only on embeddings calculated from the same type of normalization
+scrna_healthy = SCTransform(scrna_healthy)
+scrna_healthy = RunPCA(scrna_healthy)
+#Perform reference Map querying
+anchors <- FindTransferAnchors(reference = scrna_healthy, query = scrna_models, dims = 1:30, reference.reduction = "pca", normalization.method="SCT")
+predictions <- TransferData(anchorset = anchors, refdata = scrna_healthy$own.mapping, dims = 1:30)
+#Add prediction as metadata slot to the single cell object
+scrna_models <- AddMetaData(scrna_models, metadata = predictions)
+saveRDS(scrna_models, "/hpc/pmc_kool/fvalzano/Ependymoma_Filbin/model_ss2/Downstream_analysis/seurat_objs/Seurat_post_reference_mapping.rds")
+```
+
+```{r Plotting}
+Idents(scrna_models) = "models"
+scrna_models = RenameIdents(scrna_models, c("BT165-P1" = "BT165",
+                                            "BT165-P2" = "BT165",
+                                            "EP1NS-P1" = "EP1NS",
+                                            "EP1NS-P2" = "EP1NS",
+                                            "vbt211adh-P3" = "vbt211adh",
+                                            "vbt211adh-P4" = "vbt211adh",
+                                            "vbt211sph-P6" = "vbt211sph",
+                                            "vbt211sph-P7" = "vbt211sph",
+                                            "VBT242-P1" = "VBT242",
+                                            "VBT242-P2" = "VBT242"))
+scrna_models$models_merged = scrna_models@active.ident
+
+pdf("/hpc/pmc_kool/fvalzano/Ependymoma_Filbin/model_ss2/Downstream_analysis/Plots/DimPlot_models.pdf", width = 7.5, height = 5)
+DimPlot(scrna_models, group.by = "models_merged", reduction = "umap_harmony")
+dev.off()
+
+pdf("/hpc/pmc_kool/fvalzano/Ependymoma_Filbin/model_ss2/Downstream_analysis/Plots/FeaturePlot_predicted_id.pdf", width = 7.5, height = 7.5)
+features = c("prediction.score.Early.RG", "prediction.score.Late.RG", "prediction.score.EPN_ECM", "prediction.score.Neuronal")
+feature_plots <- lapply(features, function(feature) {
+  FeaturePlot(scrna_models, features = feature, 
+              min.cutoff = global_min, max.cutoff = global_max, reduction = "umap_harmony")
+})
+cowplot::plot_grid(plotlist = feature_plots, ncol = 2)
+dev.off()
+pdf("/hpc/pmc_kool/fvalzano/Ependymoma_Filbin/model_ss2/Downstream_analysis/Plots/BoxPlots_predicted_id.pdf", width = 10, height = 5)
+dittoSeq::dittoPlot(scrna_models, var=features, plots=c("boxplot"), boxplot.width=0.75,group.by = "models_merged", split.ncol=4)
+dev.off()
+
+barplot=dittoSeq::dittoPlot(scrna_models, var="predicted.id", plots=c("boxplot"), boxplot.width=0.75,group.by = "models_merged", split.ncol=4)
+barplot = reshape2::melt(barplot$data)
+tot.BT165 = max(nrow(barplot[barplot$grouping =="BT165",]))
+tot.EP1NS = max(nrow(barplot[barplot$grouping =="EP1NS",]))
+tot.vbt211adh = max(nrow(barplot[barplot$grouping =="vbt211adh",]))
+tot.vbt211sph = max(nrow(barplot[barplot$grouping =="vbt211sph",]))
+tot.VBT242 = max(nrow(barplot[barplot$grouping =="VBT242",]))
+
+barplot_percent = data.frame("Models" = c(unique(barplot$grouping)), 
+                             "Value" = c((max(nrow(barplot[barplot$var.data == "Late RG" & barplot$grouping == "BT165",]))/tot.BT165)*100,
+                                                                                  (max(nrow(barplot[barplot$var.data == "Late RG" & barplot$grouping == "EP1NS",]))/tot.EP1NS)*100,
+                                                                                  (max(nrow(barplot[barplot$var.data == "Late RG" & barplot$grouping == "vbt211adh",]))/tot.vbt211adh)*100,
+                                                                                  (max(nrow(barplot[barplot$var.data == "Late RG" & barplot$grouping == "vbt211sph",]))/tot.vbt211sph)*100,
+                                                                                  (max(nrow(barplot[barplot$var.data == "Late RG" & barplot$grouping == "VBT242",]))/tot.VBT242)*100,
+                                                                                  (max(nrow(barplot[barplot$var.data == "Neuronal" & barplot$grouping == "BT165",]))/tot.BT165)*100,
+                                                                                  (max(nrow(barplot[barplot$var.data == "Neuronal" & barplot$grouping == "EP1NS",]))/tot.EP1NS)*100,
+                                                                                  (max(nrow(barplot[barplot$var.data == "Neuronal" & barplot$grouping == "vbt211adh",]))/tot.vbt211adh)*100,
+                                                                                  (max(nrow(barplot[barplot$var.data == "Neuronal" & barplot$grouping == "vbt211sph",]))/tot.vbt211sph)*100,
+                                                                                  (max(nrow(barplot[barplot$var.data == "Neuronal" & barplot$grouping == "VBT242",]))/tot.VBT242)*100),
+                              "ID" = rep(c("Late_RG", "Neuronal"), each = 5))
+
+pdf("/hpc/pmc_kool/fvalzano/Ependymoma_Filbin/model_ss2/Downstream_analysis/Plots/Barplot_predicted_id.pdf", width = 10, height = 5)
+ggplot(barplot_percent, aes(x = barplot_percent$Models, y = barplot_percent$Value, fill = barplot_percent$ID))+
+  geom_bar(stat="identity", position = "fill") +
+  theme_bw()+
+  ylab("Percentage composition")+
+  theme(axis.title.x = element_blank(),
+        axis.text.x = element_text(size=15),
+        axis.text.y = element_text(size=15),
+        legend.position = "none")+
+  scale_y_continuous(labels = scales::percent)+
+  scale_fill_manual(values = c("Late_RG" = "#f0e8f2", "Neuronal" = "#d9a27a"))
+dev.off()
+```
