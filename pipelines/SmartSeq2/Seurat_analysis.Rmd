@@ -15,6 +15,7 @@ library(readr)
 library(stringr)
 library(reticulate)
 library(SeuratWrappers)
+library(SCpubr)
 ```
 ```{r load seurat obj}
 scrna = readRDS("/hpc/pmc_kool/fvalzano/Ependymoma_Filbin/model_ss2/seurat_merged.rds")
@@ -180,6 +181,7 @@ saveRDS(scrna_models, "/hpc/pmc_kool/fvalzano/Ependymoma_Filbin/model_ss2/Downst
 ```
 
 ```{r Plotting}
+scrna_models = readRDS("/hpc/pmc_kool/fvalzano/Ependymoma_Filbin/model_ss2/Downstream_analysis/seurat_objs/Seurat_post_reference_mapping.rds")
 Idents(scrna_models) = "models"
 scrna_models = RenameIdents(scrna_models, c("BT165-P1" = "BT165",
                                             "BT165-P2" = "BT165",
@@ -193,15 +195,16 @@ scrna_models = RenameIdents(scrna_models, c("BT165-P1" = "BT165",
                                             "VBT242-P2" = "VBT242"))
 scrna_models$models_merged = scrna_models@active.ident
 
-pdf("/hpc/pmc_kool/fvalzano/Ependymoma_Filbin/model_ss2/Downstream_analysis/Plots/DimPlot_models.pdf", width = 7.5, height = 5)
-DimPlot(scrna_models, group.by = "models_merged", reduction = "umap_harmony")
+pdf("/hpc/pmc_kool/fvalzano/Ependymoma_Filbin/model_ss2/Downstream_analysis/Plots/DimPlot_models.pdf")
+do_DimPlot(scrna_models, group.by = "models_merged", reduction = "umap_harmony", pt.size = 1.0) & coord_fixed()
+do_DimPlot(scrna_models, group.by = "predicted.id", reduction = "umap_harmony", pt.size = 1.0, color = c("Late RG" = "#f0e8f2", "Neuronal" = "#d9a27a")) & coord_fixed()
 dev.off()
 
-pdf("/hpc/pmc_kool/fvalzano/Ependymoma_Filbin/model_ss2/Downstream_analysis/Plots/FeaturePlot_predicted_id.pdf", width = 7.5, height = 7.5)
+pdf("/hpc/pmc_kool/fvalzano/Ependymoma_Filbin/model_ss2/Downstream_analysis/Plots/FeaturePlot_predicted_id.pdf", width = 10)
 features = c("prediction.score.Early.RG", "prediction.score.Late.RG", "prediction.score.EPN_ECM", "prediction.score.Neuronal")
 feature_plots <- lapply(features, function(feature) {
-  FeaturePlot(scrna_models, features = feature, 
-              min.cutoff = global_min, max.cutoff = global_max, reduction = "umap_harmony")
+  do_FeaturePlot(scrna_models, features = feature, 
+             reduction = "umap_harmony", pt.size = 1.0) & coord_fixed()
 })
 cowplot::plot_grid(plotlist = feature_plots, ncol = 2)
 dev.off()
